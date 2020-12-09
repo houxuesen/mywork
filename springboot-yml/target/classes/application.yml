@@ -1,0 +1,30 @@
+server:
+  port: 8081
+yml:
+  name: 
+  age: 50
+  birth: 2020/12/4 17:02:45
+  hobby:
+    - basketball
+    - football
+  cars:
+    - BMW
+    - BENZ
+  map:
+    - books: sanguo
+    - home: beijing
+  children:
+    - name: xiaohong
+      age: 5
+    - name: xiaolv
+      age: 3
+acme:
+  enabled: true
+  remote-address: 192.168.1.1
+  security:
+    username: admin
+    password: 123456
+    roles:
+      - admin
+      - system
+

@@ -1,0 +1,67 @@
+{
+  "groups": [
+    {
+      "name": "acme",
+      "type": "cn.hxs.model.AcmeProperties",
+      "sourceType": "cn.hxs.model.AcmeProperties"
+    },
+    {
+      "name": "yml",
+      "type": "cn.hxs.model.UserModel",
+      "sourceType": "cn.hxs.model.UserModel"
+    }
+  ],
+  "properties": [
+    {
+      "name": "acme.enabled",
+      "type": "java.lang.Boolean",
+      "sourceType": "cn.hxs.model.AcmeProperties"
+    },
+    {
+      "name": "acme.remote-address",
+      "type": "java.net.InetAddress",
+      "sourceType": "cn.hxs.model.AcmeProperties"
+    },
+    {
+      "name": "acme.security",
+      "type": "cn.hxs.model.Security",
+      "sourceType": "cn.hxs.model.AcmeProperties"
+    },
+    {
+      "name": "yml.age",
+      "type": "java.lang.Integer",
+      "sourceType": "cn.hxs.model.UserModel"
+    },
+    {
+      "name": "yml.birth",
+      "type": "java.util.Date",
+      "sourceType": "cn.hxs.model.UserModel"
+    },
+    {
+      "name": "yml.cars",
+      "type": "java.util.List<java.lang.String>",
+      "sourceType": "cn.hxs.model.UserModel"
+    },
+    {
+      "name": "yml.children",
+      "type": "java.util.List<cn.hxs.model.ChildModel>",
+      "sourceType": "cn.hxs.model.UserModel"
+    },
+    {
+      "name": "yml.hobby",
+      "type": "java.util.List<java.lang.String>",
+      "sourceType": "cn.hxs.model.UserModel"
+    },
+    {
+      "name": "yml.map",
+      "type": "java.util.Map<java.lang.String,java.lang.String>",
+      "sourceType": "cn.hxs.model.UserModel"
+    },
+    {
+      "name": "yml.name",
+      "type": "java.lang.String",
+      "sourceType": "cn.hxs.model.UserModel"
+    }
+  ],
+  "hints": []
+}
