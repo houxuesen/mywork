@@ -78,9 +78,10 @@ public class TestController {
         Map<String, Double> codeFileVoMap = codeFileVoList.stream().collect(Collectors.toMap(CodeFileVo::getCode, CodeFileVo::getCoefficient,(key1, key2) -> key2));
 
         String name = detailFile.getOriginalFilename();
+        //筛选 Import 和 Export
         List<DetailFileVo> list = ExcelUtils.excelToDetailFileList(detailFile.getInputStream());
         list = list.stream().filter(detailFileVo -> ("Import".equals(detailFileVo.getTradeFlow()) || "Export".equals(detailFileVo.getTradeFlow()))).collect(Collectors.toList());
-        //筛选国家
+        //筛选一带一路国家
         List<DetailFileVo> newDetailFileVos = new ArrayList<>();
         list.stream().forEach(detailFileVo -> {
             for (Map.Entry<String, String> it : countryVoMap.entrySet()) {
@@ -97,12 +98,14 @@ public class TestController {
 
         Map<String, DetailFileVo> detailFileVoMap = new HashMap<>();
         newDetailFileVos.forEach(detailFileVo -> {
+            //过滤 TradeQuantity NetWeight TradeValue为空
             if ((detailFileVo.getTradeQuantity() == null || detailFileVo.getTradeQuantity() == 0)
                     && (detailFileVo.getNetWeight() == null || detailFileVo.getNetWeight() == 0)
                     && (detailFileVo.getTradeValue() == null || detailFileVo.getTradeValue() == 0)) {
                 return;
             }
 
+            //去重Partner和 code 相同   保留 netWeight 最大值
             if (detailFileVoMap.containsKey(detailFileVo.getPartner() + detailFileVo.getCode())) {
                 DetailFileVo dataFile = detailFileVoMap.get(detailFileVo.getPartner() + detailFileVo.getCode());
                 if (dataFile.getNetWeight() != null && detailFileVo.getNetWeight() != null) {
