@@ -3,6 +3,7 @@ package com.tx.sboot;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
+
 /**
  * @Author hxs
  * @Date 2020/12/1 14:37
@@ -15,3 +16,6 @@ public class BootApplication {
         SpringApplication.run(BootApplication.class,args);
     }
 }
+
+
+
