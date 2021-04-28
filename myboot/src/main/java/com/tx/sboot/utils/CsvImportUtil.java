@@ -60,6 +60,11 @@ public class CsvImportUtil {
         BufferedInputStream bufferedInputStream = null;
         OutputStream os = null;
         try {
+            String fileName = new String(file.getName().getBytes(), "ISO8859-1");
+            response.setContentType("application/octet-stream;charset=ISO8859-1");
+            response.setHeader("Content-Disposition", "attachment;filename=" + fileName);
+            response.addHeader("Pargam", "no-cache");
+            response.addHeader("Cache-Control", "no-cache");
             fileInputStream = new FileInputStream(file);
             bufferedInputStream = new BufferedInputStream(fileInputStream);
             os = response.getOutputStream();
