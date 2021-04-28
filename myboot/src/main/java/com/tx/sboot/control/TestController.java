@@ -8,6 +8,7 @@ import com.tx.sboot.vo.CountryVo;
 import com.tx.sboot.vo.DetailFileVo;
 import org.apache.poi.hssf.usermodel.*;
 import org.springframework.stereotype.Controller;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -46,40 +47,76 @@ public class TestController {
      * @Param file
      **/
     @RequestMapping(value = "file/uploadCsv")
-    @ResponseBody
-    public String uploadCsv(@RequestParam("scvFile") MultipartFile scvFile) {
+    public void uploadCsv(@RequestParam("scvFile") MultipartFile scvFile,
+                            @RequestParam("exlCodeFile") MultipartFile exlCodeFile,
+                            HttpServletResponse response) {
         try {
             //上传内容不能为空
             if (scvFile.isEmpty()) {
-                return "500";
+                return ;
             }
+
+            if(exlCodeFile.isEmpty()){
+                return ;
+            }
+
+            CodeTestVo codeTestVos = ExcelUtils.excelToCodeFileList(exlCodeFile.getInputStream());
+            List<CountryVo> countryVoList = codeTestVos.getCountryVoList();
+            List<CodeFileVo> codeFileVoList = codeTestVos.getCodeFileVoList();
+            Map<String, String> countryVoMap = countryVoList.stream().collect(Collectors.toMap(CountryVo::getCountryEName, CountryVo::getCountryName,(key1, key2) -> key2));
+            Map<String, Double> codeFileVoMap = codeFileVoList.stream().collect(Collectors.toMap(CodeFileVo::getCode, CodeFileVo::getCoefficient,(key1, key2) -> key2));
+
+
             File file = CsvImportUtil.uploadFile(scvFile);
-            List<List<String>> userRoleLists = CsvImportUtil.readCSV(file.getPath(), 2);
+            List<List<String>> userRoleLists = CsvImportUtil.readCSV(file.getPath(), 11);
+
+            String name = scvFile.getOriginalFilename().substring(0,scvFile.getOriginalFilename().lastIndexOf("."))+"数据处理";
+            List<DetailFileVo> list = new ArrayList<>();
+            for(List<String> str :userRoleLists){
+                DetailFileVo  detailFileVo = new DetailFileVo();
+                for(int j = 0 ; j< str.size() ; j++){
+                    String data = str.get(j).trim();
+                    if(j == 0){
+                        detailFileVo.setYear(data);
+                    }else if(j == 1){
+                        detailFileVo.setTradeFlow(data);
+                    }else if(j == 2){
+                        detailFileVo.setReporter(data);
+                    }else if(j == 3){
+                        detailFileVo.setPartner(data);
+                    }else if(j == 4){
+                        detailFileVo.setCode(data);
+                    }else if(j == 7){
+                        detailFileVo.setNetWeight(StringUtils.isEmpty(data) ? null : Double.parseDouble(data));
+                    }else if(j == 8){
+                        detailFileVo.setUnit(data);
+                    }
+                }
+
+                list.add(detailFileVo);
+            }
+            List<DetailFileVo> monthReportModels = getMonthReportModels(countryVoMap,codeFileVoMap,list);
             file.delete();
-            return "200";
+            String[] title = {"Source", "Weight", "Target"};
+            List<String[]> values = new ArrayList<>();
+            NumberFormat nf = NumberFormat.getInstance();
+            for(DetailFileVo detailFileVo:monthReportModels){
+                String[] strings = new String[3];
+                strings[0] = detailFileVo.getReporter();
+                strings[1] = nf.format(detailFileVo.getNetWeight());
+                strings[2] = detailFileVo.getPartner();
+                values.add(strings);
+            }
+            CsvImportUtil.downloadFile(response,CsvImportUtil.makeTempCSV(name,title,values));
+
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return "500";
+
     }
 
 
-
-    @RequestMapping("file/upload")
-    public void uploadExl(@RequestParam("detailFile") MultipartFile detailFile,
-                            @RequestParam("codeFile") MultipartFile codeFile,
-                            HttpServletResponse response) throws Exception {
-        Date startDate = new Date();
-        System.out.println("开始处理==============");
-        CodeTestVo codeTestVos = ExcelUtils.excelToCodeFileList(codeFile.getInputStream());
-        List<CountryVo> countryVoList = codeTestVos.getCountryVoList();
-        List<CodeFileVo> codeFileVoList = codeTestVos.getCodeFileVoList();
-        Map<String, String> countryVoMap = countryVoList.stream().collect(Collectors.toMap(CountryVo::getCountryEName, CountryVo::getCountryName,(key1, key2) -> key2));
-        Map<String, Double> codeFileVoMap = codeFileVoList.stream().collect(Collectors.toMap(CodeFileVo::getCode, CodeFileVo::getCoefficient,(key1, key2) -> key2));
-
-        String name = detailFile.getOriginalFilename();
-        //筛选 Import 和 Export
-        List<DetailFileVo> list = ExcelUtils.excelToDetailFileList(detailFile.getInputStream());
+    private  List<DetailFileVo> getMonthReportModels(Map<String, String> countryVoMap, Map<String, Double> codeFileVoMap,List<DetailFileVo> list){
         list = list.stream().filter(detailFileVo -> ("Import".equals(detailFileVo.getTradeFlow()) || "Export".equals(detailFileVo.getTradeFlow()))).collect(Collectors.toList());
         //筛选一带一路国家
         List<DetailFileVo> newDetailFileVos = new ArrayList<>();
@@ -171,6 +208,28 @@ public class TestController {
             monthReportModels.add(it.getValue());
         }
         monthReportModels =  monthReportModels.stream().sorted(Comparator.comparing(DetailFileVo::getReporter)).collect(Collectors.toList());
+        return monthReportModels;
+    }
+
+
+
+
+    @RequestMapping("file/upload")
+    public void uploadExl(@RequestParam("detailFile") MultipartFile detailFile,
+                            @RequestParam("codeFile") MultipartFile codeFile,
+                            HttpServletResponse response) throws Exception {
+        Date startDate = new Date();
+        System.out.println("开始处理==============");
+        CodeTestVo codeTestVos = ExcelUtils.excelToCodeFileList(codeFile.getInputStream());
+        List<CountryVo> countryVoList = codeTestVos.getCountryVoList();
+        List<CodeFileVo> codeFileVoList = codeTestVos.getCodeFileVoList();
+        Map<String, String> countryVoMap = countryVoList.stream().collect(Collectors.toMap(CountryVo::getCountryEName, CountryVo::getCountryName,(key1, key2) -> key2));
+        Map<String, Double> codeFileVoMap = codeFileVoList.stream().collect(Collectors.toMap(CodeFileVo::getCode, CodeFileVo::getCoefficient,(key1, key2) -> key2));
+
+        String name = detailFile.getOriginalFilename();
+        //筛选 Import 和 Export
+        List<DetailFileVo> list = ExcelUtils.excelToDetailFileList(detailFile.getInputStream());
+        List<DetailFileVo> monthReportModels = getMonthReportModels(countryVoMap,codeFileVoMap,list);
         exportExcel(response,monthReportModels);
         Date endDate = new Date();
         long l=endDate.getTime()-startDate.getTime();

@@ -5,9 +5,17 @@
     <title>Title</title>
 </head>
 <body>
+
 <form action="file/upload" method="post" enctype="multipart/form-data">
-    <p>detail</p><input type="file" name="detailFile">
-    <p>code</p><input type="file" name="codeFile">
+    <p>exl读取</p><input type="file" name="detailFile">
+    <p>exl读取code</p><input type="file" name="codeFile">
+    <p><input type="submit" value="提交"></p>
+</form>
+
+
+<form action="file/uploadCsv" method="post" enctype="multipart/form-data">
+    <p>csv读取</p><input type="file" name="scvFile">
+    <p>exl读取code</p><input type="file" name="exlCodeFile">
     <p><input type="submit" value="提交"></p>
 </form>
 
