@@ -12,7 +12,6 @@ import org.springframework.stereotype.Controller;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletResponse;
@@ -62,14 +61,14 @@ public class TestController {
                 }
                 NumberFormat nf = NumberFormat.getInstance();
                 List<DetailFileVo>monthReportModels = getMonthReportModels(codeTestVo,getDetailFileVos(scvFile));
-                String[] title = {"Source", "Weight", "Target"};
+                String[] title = {"Source", "Target", "Weight"};
                 String fileName =  scvFile.getOriginalFilename().substring(0,scvFile.getOriginalFilename().lastIndexOf("."))+"数据处理";
                 List<String[]> values = new ArrayList<>();
                 for(DetailFileVo detailFileVo:monthReportModels){
                     String[] strings = new String[3];
                     strings[0]=detailFileVo.getPartner();
-                    strings[1]=nf.format(detailFileVo.getNetWeight());
-                    strings[2]=detailFileVo.getReporter();
+                    strings[1]=detailFileVo.getReporter();
+                    strings[2]=nf.format(detailFileVo.getNetWeight());
                     values.add(strings);
                 }
                 File file =  CsvImportUtil.makeTempCSV(fileName,title,values);
@@ -194,7 +193,23 @@ public class TestController {
                     } else {
                         detailFileVoMap.put(key, detailFileVo);
                     }
-                }else{
+                }else if((detailFileVo.getNetWeight() == null || detailFileVo.getNetWeight() == 0)
+                        && (dataFile.getNetWeight() == null || dataFile.getNetWeight() == 0)){
+                    if("Weight in kilograms".equals(detailFileVo.getUnit())
+                            && !"Weight in kilograms".equals(dataFile.getUnit()) ){
+                        detailFileVoMap.put(key, detailFileVo);
+                    }else if(!"Weight in kilograms".equals(detailFileVo.getUnit())
+                            && "Weight in kilograms".equals(dataFile.getUnit()) ){
+                        detailFileVoMap.put(key, dataFile);
+                    }else if("Weight in kilograms".equals(detailFileVo.getUnit())
+                            && "Weight in kilograms".equals(dataFile.getUnit())){
+                        if (dataFile.getTradeQuantity() > detailFileVo.getTradeQuantity()) {
+                            detailFileVoMap.put(key, dataFile);
+                        } else {
+                            detailFileVoMap.put(key, detailFileVo);
+                        }
+                    }
+                } else {
                     if(dataFile.getNetWeight() != null
                             && (detailFileVo.getNetWeight() == null || detailFileVo.getNetWeight() == 0)){
                         detailFileVoMap.put(key, dataFile);
@@ -219,7 +234,8 @@ public class TestController {
                 //将“Net Weight”为0或空白的，“Unit”为“Weight in kilograms”，
                 // “Trade Quantity”（三者同时满足）的数据，用“Trade Quantity”数据替换“Net Weight”数据，达到补全一部分数据的效果。
                 if ((detailFileVo.getNetWeight() == null || detailFileVo.getNetWeight() == 0)
-                        && "Weight in kilograms".equals(detailFileVo.getUnit()) && detailFileVo.getTradeQuantity() != null
+                        && "Weight in kilograms".equals(detailFileVo.getUnit())
+                        && (detailFileVo.getTradeQuantity() != null && detailFileVo.getTradeQuantity() != 0)
                 ) {
                     detailFileVo.setNetWeight(detailFileVo.getTradeQuantity());
                 }
@@ -243,11 +259,14 @@ public class TestController {
                     //先求和
                     if (detailFileVo.getCode().equals(it.getCode())) {
                         netWeightTotal += it.getNetWeight() != null ? it.getNetWeight() : 0;
-                        tradeValueTotal += it.getTradeValue() != null ? it.getTradeValue() : 0;
+                        if(it.getNetWeight() != null && it.getNetWeight() != 0){
+                            tradeValueTotal += it.getTradeValue() != null ? it.getTradeValue() : 0;
+                        }
                     }
                 }
+
                 if(netWeightTotal != 0 &&tradeValueTotal != 0  ){
-                    testTotal =  netWeightTotal / tradeValueTotal;
+                    testTotal =  netWeightTotal / tradeValueTotal * detailFileVo.getTradeValue();
                     for (Map.Entry<String, Double> it : codeFileVoMap.entrySet()) {
                         if (detailFileVo.getCode().contains(it.getKey())) {
                             testTotal = testTotal * it.getValue();
@@ -269,6 +288,9 @@ public class TestController {
 
         Map<String,DetailFileVo> endMap = new HashMap<>();
         detailFileVos.forEach(detailFileVo -> {
+            if(detailFileVo.getReporter().equals(detailFileVo.getPartner())){
+                return;
+            }
             if(endMap.containsKey(detailFileVo.getYear()+detailFileVo.getReporter()+detailFileVo.getPartner())){
                 DetailFileVo df = endMap.get(detailFileVo.getYear()+detailFileVo.getReporter()+detailFileVo.getPartner());
                 df.setNetWeight(df.getNetWeight()+detailFileVo.getNetWeight());
@@ -283,7 +305,7 @@ public class TestController {
         for(Map.Entry<String, DetailFileVo> it :endMap.entrySet()){
             monthReportModels.add(it.getValue());
         }
-        monthReportModels =  monthReportModels.stream().sorted(Comparator.comparing(DetailFileVo::getReporter)).collect(Collectors.toList());
+        monthReportModels =  monthReportModels.stream().sorted(Comparator.comparing(DetailFileVo::getPartner)).sorted(Comparator.comparing(DetailFileVo::getReporter)).collect(Collectors.toList());
         return monthReportModels;
     }
 
