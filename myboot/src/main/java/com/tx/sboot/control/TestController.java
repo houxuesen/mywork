@@ -2,6 +2,7 @@ package com.tx.sboot.control;
 
 import com.tx.sboot.utils.CsvImportUtil;
 import com.tx.sboot.utils.ExcelUtils;
+import com.tx.sboot.utils.ZipUtil;
 import com.tx.sboot.vo.CodeFileVo;
 import com.tx.sboot.vo.CodeTestVo;
 import com.tx.sboot.vo.CountryVo;
@@ -48,62 +49,73 @@ public class TestController {
      * @Param file
      **/
     @RequestMapping(value = "file/uploadCsv")
-    public void uploadCsv(@RequestParam("scvFile") MultipartFile scvFile,
+    public void uploadCsv(@RequestParam("scvFile") List<MultipartFile> scvFiles,
                             @RequestParam("scvCodeFile") MultipartFile scvCodeFile,
                             HttpServletResponse response) {
         try {
+            CodeTestVo codeTestVo = getCodeTestVo(scvCodeFile);
             //上传内容不能为空
-
-            File file = CsvImportUtil.uploadFile(scvFile);
-            List<List<String>> userRoleLists = CsvImportUtil.readCSV(file.getPath(), 11);
-            file.delete();
-            List<DetailFileVo> list = new ArrayList<>();
-
-            for(List<String> str:userRoleLists){
-                DetailFileVo detailFileVo = new DetailFileVo();
-                for( int j = 0;j<str.size();j++ ){
-                    String data = str.get(j).trim();
-                    if(j == 0){
-                        detailFileVo.setYear(data);
-                    }else if(j == 1){
-                        detailFileVo.setTradeFlow(data);
-                    }else if(j == 2){
-                        detailFileVo.setReporter(data);
-                    }else if(j == 3){
-                        detailFileVo.setPartner(data);
-                    }else if(j == 4){
-                        detailFileVo.setCode(data);
-                    }else if(j == 7){
-                        detailFileVo.setNetWeight(StringUtils.isEmpty(data) ? null : Double.parseDouble(data));
-                    }else if(j == 8){
-                        detailFileVo.setUnit(data);
-                    }else if(j == 6){
-                        detailFileVo.setTradeValue(StringUtils.isEmpty(data) ? null : Double.parseDouble(data));
-                    }else if(j==9){
-                        detailFileVo.setTradeQuantity(StringUtils.isEmpty(data) ? null : Double.parseDouble(data));
-                    }
+            List<File> files = new ArrayList();
+            for(MultipartFile scvFile:scvFiles){
+                if(scvFile.isEmpty()){
+                    continue;
                 }
-
-                list.add(detailFileVo);
+                NumberFormat nf = NumberFormat.getInstance();
+                List<DetailFileVo>monthReportModels = getMonthReportModels(codeTestVo,getDetailFileVos(scvFile));
+                String[] title = {"Source", "Weight", "Target"};
+                String fileName =  scvFile.getOriginalFilename().substring(0,scvFile.getOriginalFilename().lastIndexOf("."))+"数据处理";
+                List<String[]> values = new ArrayList<>();
+                for(DetailFileVo detailFileVo:monthReportModels){
+                    String[] strings = new String[3];
+                    strings[0]=detailFileVo.getPartner();
+                    strings[1]=nf.format(detailFileVo.getNetWeight());
+                    strings[2]=detailFileVo.getReporter();
+                    values.add(strings);
+                }
+                File file =  CsvImportUtil.makeTempCSV(fileName,title,values);
+                //CsvImportUtil.downloadFile(response,CsvImportUtil.makeTempCSV(fileName,title,values));
+                files.add(file);
             }
-            NumberFormat nf = NumberFormat.getInstance();
-            List<DetailFileVo>monthReportModels =  getMonthReportModels(scvCodeFile,list);
-            String[] title = {"Source", "Weight", "Target"};
-            String fileName =  scvFile.getOriginalFilename().substring(0,scvFile.getOriginalFilename().lastIndexOf("."))+"数据处理";
-            List<String[]> values = new ArrayList<>();
-            for(DetailFileVo detailFileVo:monthReportModels){
-                String[] strings = new String[3];
-                strings[0]=detailFileVo.getPartner();
-                strings[1]=nf.format(detailFileVo.getNetWeight());
-                strings[2]=detailFileVo.getReporter();
-                values.add(strings);
-            }
-
-            CsvImportUtil.downloadFile(response,CsvImportUtil.makeTempCSV(fileName,title,values));
+            ZipUtil.downLoadFiles(files,response);
 
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    private List<DetailFileVo> getDetailFileVos(MultipartFile scvFile){
+        File file = CsvImportUtil.uploadFile(scvFile);
+        List<List<String>> userRoleLists = CsvImportUtil.readCSV(file.getPath(), 11);
+        file.delete();
+        List<DetailFileVo> list = new ArrayList<>();
+        for(List<String> str:userRoleLists){
+            DetailFileVo detailFileVo = new DetailFileVo();
+            for( int j = 0;j<str.size();j++ ){
+                String data = str.get(j).trim();
+                if(j == 0){
+                    detailFileVo.setYear(data);
+                }else if(j == 1){
+                    detailFileVo.setTradeFlow(data);
+                }else if(j == 2){
+                    detailFileVo.setReporter(data);
+                }else if(j == 3){
+                    detailFileVo.setPartner(data);
+                }else if(j == 4){
+                    detailFileVo.setCode(data);
+                }else if(j == 7){
+                    detailFileVo.setNetWeight(StringUtils.isEmpty(data) ? null : Double.parseDouble(data));
+                }else if(j == 8){
+                    detailFileVo.setUnit(data);
+                }else if(j == 6){
+                    detailFileVo.setTradeValue(StringUtils.isEmpty(data) ? null : Double.parseDouble(data));
+                }else if(j==9){
+                    detailFileVo.setTradeQuantity(StringUtils.isEmpty(data) ? null : Double.parseDouble(data));
+                }
+            }
+
+            list.add(detailFileVo);
+        }
+        return list;
     }
 
 
@@ -116,9 +128,10 @@ public class TestController {
         System.out.println("开始处理==============");
 
         String name = detailFile.getOriginalFilename();
+        CodeTestVo codeTestVo = getCodeTestVo(codeFile);
         //筛选 Import 和 Export
         List<DetailFileVo> list = ExcelUtils.excelToDetailFileList(detailFile.getInputStream());
-        List<DetailFileVo>monthReportModels =  getMonthReportModels(codeFile,list);
+        List<DetailFileVo>monthReportModels =  getMonthReportModels(codeTestVo,list);
         exportExcel(response,monthReportModels);
         Date endDate = new Date();
         long l=endDate.getTime()-startDate.getTime();
@@ -131,9 +144,13 @@ public class TestController {
 
     }
 
-
-    private  List<DetailFileVo> getMonthReportModels(MultipartFile codeFile,List<DetailFileVo> list) throws IOException {
+    private CodeTestVo getCodeTestVo(MultipartFile codeFile) throws IOException {
         CodeTestVo codeTestVos = ExcelUtils.excelToCodeFileList(codeFile.getInputStream());
+        return codeTestVos;
+    }
+
+
+    private  List<DetailFileVo> getMonthReportModels(CodeTestVo codeTestVos,List<DetailFileVo> list) throws IOException {
         List<CountryVo> countryVoList = codeTestVos.getCountryVoList();
         List<CodeFileVo> codeFileVoList = codeTestVos.getCodeFileVoList();
         Map<String, String> countryVoMap = countryVoList.stream().collect(Collectors.toMap(CountryVo::getCountryEName, CountryVo::getCountryName,(key1, key2) -> key2));
