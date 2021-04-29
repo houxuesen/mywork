@@ -249,7 +249,7 @@ public class TestController {
                 if(netWeightTotal != 0 &&tradeValueTotal != 0  ){
                     testTotal =  netWeightTotal / tradeValueTotal;
                     for (Map.Entry<String, Double> it : codeFileVoMap.entrySet()) {
-                        if (detailFileVo.getCode().indexOf(it.getKey()) > -1) {
+                        if (detailFileVo.getCode().contains(it.getKey())) {
                             testTotal = testTotal * it.getValue();
                         }
                     }
@@ -258,7 +258,7 @@ public class TestController {
 
             }else{
                 for (Map.Entry<String, Double> it : codeFileVoMap.entrySet()) {
-                    if (detailFileVo.getCode().indexOf(it.getKey()) > -1) {
+                    if (detailFileVo.getCode().contains(it.getKey())) {
                         detailFileVo.setNetWeight(detailFileVo.getNetWeight() *  it.getValue());
                     }
                 }
