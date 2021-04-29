@@ -1,7 +1,10 @@
 package com.tx.sboot.utils;
 
+import org.springframework.util.ClassUtils;
+
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
+import java.net.URL;
 import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -13,6 +16,8 @@ import java.util.zip.ZipOutputStream;
  * @Version 1.0
  */
 public class ZipUtil {
+
+    public final static String PATH = ClassUtils.getDefaultClassLoader().getResource("").getPath();
     /**
      *
      * @param files List<File> 作为参数传进来，就是把多个文件的路径放到一个list里面
@@ -20,11 +25,11 @@ public class ZipUtil {
      * @return
      * @throws Exception
      */
-    public static HttpServletResponse downLoadFiles(List<File> files, HttpServletResponse response) throws Exception {
+    public static HttpServletResponse downLoadFiles(List<File> files, HttpServletResponse response,String fileName) throws Exception {
 
         try {
             // 临时文件夹 最好是放在服务器上，方法最后有删除临时文件的步骤
-            String zipFilename = "D:/tempFile.zip";
+            String zipFilename = PATH+fileName+".zip";
             File file = new File(zipFilename);
             file.createNewFile();
             if (!file.exists()) {

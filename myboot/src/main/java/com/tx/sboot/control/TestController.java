@@ -76,7 +76,8 @@ public class TestController {
                 //CsvImportUtil.downloadFile(response,CsvImportUtil.makeTempCSV(fileName,title,values));
                 files.add(file);
             }
-            ZipUtil.downLoadFiles(files,response);
+            Date date = new Date();
+            ZipUtil.downLoadFiles(files,response,"数据处理"+ date.getTime());
 
         } catch (Exception e) {
             e.printStackTrace();

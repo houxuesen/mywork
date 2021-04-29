@@ -21,7 +21,7 @@ public class CsvImportUtil {
     //行尾分隔符定义
     private final static String NEW_LINE_SEPARATOR = "\n";
     //上传文件的存储位置
-    private final static URL PATH = Thread.currentThread().getContextClassLoader().getResource("");
+    public final static URL PATH = Thread.currentThread().getContextClassLoader().getResource("");
 
     /**
      * @return File
