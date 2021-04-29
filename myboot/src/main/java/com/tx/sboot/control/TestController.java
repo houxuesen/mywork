@@ -16,6 +16,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
+import java.io.IOException;
 import java.io.OutputStream;
 import java.text.NumberFormat;
 import java.util.*;
@@ -48,33 +49,19 @@ public class TestController {
      **/
     @RequestMapping(value = "file/uploadCsv")
     public void uploadCsv(@RequestParam("scvFile") MultipartFile scvFile,
-                            @RequestParam("exlCodeFile") MultipartFile exlCodeFile,
+                            @RequestParam("scvCodeFile") MultipartFile scvCodeFile,
                             HttpServletResponse response) {
         try {
             //上传内容不能为空
-            if (scvFile.isEmpty()) {
-                return ;
-            }
-
-            if(exlCodeFile.isEmpty()){
-                return ;
-            }
-
-            CodeTestVo codeTestVos = ExcelUtils.excelToCodeFileList(exlCodeFile.getInputStream());
-            List<CountryVo> countryVoList = codeTestVos.getCountryVoList();
-            List<CodeFileVo> codeFileVoList = codeTestVos.getCodeFileVoList();
-            Map<String, String> countryVoMap = countryVoList.stream().collect(Collectors.toMap(CountryVo::getCountryEName, CountryVo::getCountryName,(key1, key2) -> key2));
-            Map<String, Double> codeFileVoMap = codeFileVoList.stream().collect(Collectors.toMap(CodeFileVo::getCode, CodeFileVo::getCoefficient,(key1, key2) -> key2));
-
 
             File file = CsvImportUtil.uploadFile(scvFile);
             List<List<String>> userRoleLists = CsvImportUtil.readCSV(file.getPath(), 11);
-
-            String name = scvFile.getOriginalFilename().substring(0,scvFile.getOriginalFilename().lastIndexOf("."))+"数据处理";
+            file.delete();
             List<DetailFileVo> list = new ArrayList<>();
-            for(List<String> str :userRoleLists){
-                DetailFileVo  detailFileVo = new DetailFileVo();
-                for(int j = 0 ; j< str.size() ; j++){
+
+            for(List<String> str:userRoleLists){
+                DetailFileVo detailFileVo = new DetailFileVo();
+                for( int j = 0;j<str.size();j++ ){
                     String data = str.get(j).trim();
                     if(j == 0){
                         detailFileVo.setYear(data);
@@ -90,33 +77,67 @@ public class TestController {
                         detailFileVo.setNetWeight(StringUtils.isEmpty(data) ? null : Double.parseDouble(data));
                     }else if(j == 8){
                         detailFileVo.setUnit(data);
+                    }else if(j == 6){
+                        detailFileVo.setTradeValue(StringUtils.isEmpty(data) ? null : Double.parseDouble(data));
+                    }else if(j==9){
+                        detailFileVo.setTradeQuantity(StringUtils.isEmpty(data) ? null : Double.parseDouble(data));
                     }
                 }
 
                 list.add(detailFileVo);
             }
-            List<DetailFileVo> monthReportModels = getMonthReportModels(countryVoMap,codeFileVoMap,list);
-            file.delete();
-            String[] title = {"Source", "Weight", "Target"};
-            List<String[]> values = new ArrayList<>();
             NumberFormat nf = NumberFormat.getInstance();
+            List<DetailFileVo>monthReportModels =  getMonthReportModels(scvCodeFile,list);
+            String[] title = {"Source", "Weight", "Target"};
+            String fileName =  scvFile.getOriginalFilename().substring(0,scvFile.getOriginalFilename().lastIndexOf("."))+"数据处理";
+            List<String[]> values = new ArrayList<>();
             for(DetailFileVo detailFileVo:monthReportModels){
                 String[] strings = new String[3];
-                strings[0] = detailFileVo.getReporter();
-                strings[1] = nf.format(detailFileVo.getNetWeight());
-                strings[2] = detailFileVo.getPartner();
+                strings[0]=detailFileVo.getPartner();
+                strings[1]=nf.format(detailFileVo.getNetWeight());
+                strings[2]=detailFileVo.getReporter();
                 values.add(strings);
             }
-            CsvImportUtil.downloadFile(response,CsvImportUtil.makeTempCSV(name,title,values));
+
+            CsvImportUtil.downloadFile(response,CsvImportUtil.makeTempCSV(fileName,title,values));
 
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+
+
+    @RequestMapping("file/upload")
+    public void uploadExl(@RequestParam("detailFile") MultipartFile detailFile,
+                            @RequestParam("codeFile") MultipartFile codeFile,
+                            HttpServletResponse response) throws Exception {
+        Date startDate = new Date();
+        System.out.println("开始处理==============");
+
+        String name = detailFile.getOriginalFilename();
+        //筛选 Import 和 Export
+        List<DetailFileVo> list = ExcelUtils.excelToDetailFileList(detailFile.getInputStream());
+        List<DetailFileVo>monthReportModels =  getMonthReportModels(codeFile,list);
+        exportExcel(response,monthReportModels);
+        Date endDate = new Date();
+        long l=endDate.getTime()-startDate.getTime();
+        long day=l/(24*60*60*1000);
+        long hour=(l/(60*60*1000)-day*24);
+        long min=((l/(60*1000))-day*24*60-hour*60);
+        long s=(l/1000-day*24*60*60-hour*60*60-min*60);
+        System.out.println(""+day+"天"+hour+"小时"+min+"分"+s+"秒");
+        System.out.println("处理结束==============");
 
     }
 
 
-    private  List<DetailFileVo> getMonthReportModels(Map<String, String> countryVoMap, Map<String, Double> codeFileVoMap,List<DetailFileVo> list){
+    private  List<DetailFileVo> getMonthReportModels(MultipartFile codeFile,List<DetailFileVo> list) throws IOException {
+        CodeTestVo codeTestVos = ExcelUtils.excelToCodeFileList(codeFile.getInputStream());
+        List<CountryVo> countryVoList = codeTestVos.getCountryVoList();
+        List<CodeFileVo> codeFileVoList = codeTestVos.getCodeFileVoList();
+        Map<String, String> countryVoMap = countryVoList.stream().collect(Collectors.toMap(CountryVo::getCountryEName, CountryVo::getCountryName,(key1, key2) -> key2));
+        Map<String, Double> codeFileVoMap = codeFileVoList.stream().collect(Collectors.toMap(CodeFileVo::getCode, CodeFileVo::getCoefficient,(key1, key2) -> key2));
         list = list.stream().filter(detailFileVo -> ("Import".equals(detailFileVo.getTradeFlow()) || "Export".equals(detailFileVo.getTradeFlow()))).collect(Collectors.toList());
         //筛选一带一路国家
         List<DetailFileVo> newDetailFileVos = new ArrayList<>();
@@ -132,61 +153,98 @@ public class TestController {
             }
         });
 
+        for(DetailFileVo detailFileVo:newDetailFileVos){
+            if("Export".equals(detailFileVo.getTradeFlow())){
+                //partner 和 reporter
+                String partner = detailFileVo.getPartner();
+                String reporter = detailFileVo.getReporter();
+                detailFileVo.setPartner(reporter);
+                detailFileVo.setReporter(partner);
+            }
+        }
+
 
         Map<String, DetailFileVo> detailFileVoMap = new HashMap<>();
         newDetailFileVos.forEach(detailFileVo -> {
-            //过滤 TradeQuantity NetWeight TradeValue为空
-            if ((detailFileVo.getTradeQuantity() == null || detailFileVo.getTradeQuantity() == 0)
-                    && (detailFileVo.getNetWeight() == null || detailFileVo.getNetWeight() == 0)
-                    && (detailFileVo.getTradeValue() == null || detailFileVo.getTradeValue() == 0)) {
-                return;
-            }
-
             //去重Partner和 code 相同   保留 netWeight 最大值
-            if (detailFileVoMap.containsKey(detailFileVo.getPartner() + detailFileVo.getCode())) {
-                DetailFileVo dataFile = detailFileVoMap.get(detailFileVo.getPartner() + detailFileVo.getCode());
+            String key = detailFileVo.getReporter() +"-"+ detailFileVo.getPartner()+"-" + detailFileVo.getCode();
+            if (detailFileVoMap.containsKey(key)) {
+                DetailFileVo dataFile = detailFileVoMap.get(key);
                 if (dataFile.getNetWeight() != null && detailFileVo.getNetWeight() != null) {
                     if (dataFile.getNetWeight() > detailFileVo.getNetWeight()) {
-                        detailFileVoMap.put(detailFileVo.getPartner() + detailFileVo.getCode(), dataFile);
+                        detailFileVoMap.put(key, dataFile);
                     } else {
-                        detailFileVoMap.put(detailFileVo.getPartner() + detailFileVo.getCode(), detailFileVo);
+                        detailFileVoMap.put(key, detailFileVo);
+                    }
+                }else{
+                    if(dataFile.getNetWeight() != null
+                            && (detailFileVo.getNetWeight() == null || detailFileVo.getNetWeight() == 0)){
+                        detailFileVoMap.put(key, dataFile);
+                    }else if(detailFileVo.getNetWeight() != null
+                            && (dataFile.getNetWeight() == null || dataFile.getNetWeight() == 0)){
+                        detailFileVoMap.put(key, detailFileVo);
                     }
                 }
             } else {
+                detailFileVoMap.put(key, detailFileVo);
+            }
+        });
+
+        //过滤数据
+
+        List<DetailFileVo>  dfVo = new ArrayList<>();
+        detailFileVoMap.forEach((s, detailFileVo) -> {
+            //若“Trade Quantity”和“Net Weight”均为0或空白，且“Trade Value”数据也为0或空白，删除
+            if(!((detailFileVo.getTradeQuantity() == null || detailFileVo.getTradeQuantity() == 0)
+                    && (detailFileVo.getNetWeight() == null || detailFileVo.getNetWeight() == 0)
+                    && (detailFileVo.getTradeValue() == null || detailFileVo.getTradeValue() == 0))){
+                //将“Net Weight”为0或空白的，“Unit”为“Weight in kilograms”，
+                // “Trade Quantity”（三者同时满足）的数据，用“Trade Quantity”数据替换“Net Weight”数据，达到补全一部分数据的效果。
                 if ((detailFileVo.getNetWeight() == null || detailFileVo.getNetWeight() == 0)
                         && "Weight in kilograms".equals(detailFileVo.getUnit()) && detailFileVo.getTradeQuantity() != null
                 ) {
                     detailFileVo.setNetWeight(detailFileVo.getTradeQuantity());
                 }
-                detailFileVoMap.put(detailFileVo.getPartner() + detailFileVo.getCode(), detailFileVo);
+                dfVo.add(detailFileVo);
+            }else{
+                System.out.println(s + detailFileVo.getTradeFlow());
             }
-
         });
 
+
+
         List<DetailFileVo> detailFileVos = new ArrayList<>();
-        detailFileVoMap.forEach((s, detailFileVo) -> {
+        dfVo.forEach(detailFileVo -> {
             //补齐
             if (detailFileVo.getNetWeight() == null || detailFileVo.getNetWeight() == 0) {
                 Double testTotal = 0D;
                 Double netWeightTotal = 0D;
                 Double tradeValueTotal = 0D;
 
-
-                for (Map.Entry<String, DetailFileVo> it : detailFileVoMap.entrySet()) {
+                for (DetailFileVo it : dfVo) {
                     //先求和
-                    if (detailFileVo.getCode().equals(it.getValue().getCode())) {
-                        netWeightTotal += it.getValue().getNetWeight() != null ? it.getValue().getNetWeight() : 0;
-                        tradeValueTotal += it.getValue().getTradeValue() != null ? it.getValue().getTradeValue() : 0;
+                    if (detailFileVo.getCode().equals(it.getCode())) {
+                        netWeightTotal += it.getNetWeight() != null ? it.getNetWeight() : 0;
+                        tradeValueTotal += it.getTradeValue() != null ? it.getTradeValue() : 0;
                     }
                 }
+                if(netWeightTotal != 0 &&tradeValueTotal != 0  ){
+                    testTotal =  netWeightTotal / tradeValueTotal;
+                    for (Map.Entry<String, Double> it : codeFileVoMap.entrySet()) {
+                        if (detailFileVo.getCode().indexOf(it.getKey()) > -1) {
+                            testTotal = testTotal * it.getValue();
+                        }
+                    }
+                    detailFileVo.setNetWeight(testTotal);
+                }
 
-
+            }else{
                 for (Map.Entry<String, Double> it : codeFileVoMap.entrySet()) {
                     if (detailFileVo.getCode().indexOf(it.getKey()) > -1) {
-                        testTotal = testTotal * it.getValue();
+                        detailFileVo.setNetWeight(detailFileVo.getNetWeight() *  it.getValue());
                     }
                 }
-                detailFileVo.setNetWeight(testTotal);
+
             }
             detailFileVos.add(detailFileVo);
         });
@@ -212,35 +270,6 @@ public class TestController {
     }
 
 
-
-
-    @RequestMapping("file/upload")
-    public void uploadExl(@RequestParam("detailFile") MultipartFile detailFile,
-                            @RequestParam("codeFile") MultipartFile codeFile,
-                            HttpServletResponse response) throws Exception {
-        Date startDate = new Date();
-        System.out.println("开始处理==============");
-        CodeTestVo codeTestVos = ExcelUtils.excelToCodeFileList(codeFile.getInputStream());
-        List<CountryVo> countryVoList = codeTestVos.getCountryVoList();
-        List<CodeFileVo> codeFileVoList = codeTestVos.getCodeFileVoList();
-        Map<String, String> countryVoMap = countryVoList.stream().collect(Collectors.toMap(CountryVo::getCountryEName, CountryVo::getCountryName,(key1, key2) -> key2));
-        Map<String, Double> codeFileVoMap = codeFileVoList.stream().collect(Collectors.toMap(CodeFileVo::getCode, CodeFileVo::getCoefficient,(key1, key2) -> key2));
-
-        String name = detailFile.getOriginalFilename();
-        //筛选 Import 和 Export
-        List<DetailFileVo> list = ExcelUtils.excelToDetailFileList(detailFile.getInputStream());
-        List<DetailFileVo> monthReportModels = getMonthReportModels(countryVoMap,codeFileVoMap,list);
-        exportExcel(response,monthReportModels);
-        Date endDate = new Date();
-        long l=endDate.getTime()-startDate.getTime();
-        long day=l/(24*60*60*1000);
-        long hour=(l/(60*60*1000)-day*24);
-        long min=((l/(60*1000))-day*24*60-hour*60);
-        long s=(l/1000-day*24*60*60-hour*60*60-min*60);
-        System.out.println(""+day+"天"+hour+"小时"+min+"分"+s+"秒");
-        System.out.println("处理结束==============");
-
-    }
 
     public void setResponseHeader(HttpServletResponse response, String fileName) {
         try {

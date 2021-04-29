@@ -55,16 +55,16 @@ public class CsvImportUtil {
      * @Description 下载文件
      * @Param response，file
      **/
-    public static void downloadFile(HttpServletResponse response, File file) {
+    public static boolean downloadFile(HttpServletResponse response, File file) {
         FileInputStream fileInputStream = null;
         BufferedInputStream bufferedInputStream = null;
         OutputStream os = null;
         try {
             String fileName = new String(file.getName().getBytes(), "ISO8859-1");
-            response.setContentType("application/force-download");
-            response.setHeader("content-type","application/octet-stream");
-            response.setHeader("Content-Disposition","attachment;fileName="+fileName);
-
+            response.setContentType("application/octet-stream;charset=ISO8859-1");
+            response.setHeader("Content-Disposition", "attachment;filename=" + fileName);
+            response.addHeader("Pargam", "no-cache");
+            response.addHeader("Cache-Control", "no-cache");
             fileInputStream = new FileInputStream(file);
             bufferedInputStream = new BufferedInputStream(fileInputStream);
             os = response.getOutputStream();
@@ -77,7 +77,7 @@ public class CsvImportUtil {
                 os.write(buffer, 0, i);
                 i = bufferedInputStream.read(buffer);
             }
-
+            return true;
         } catch (IOException e) {
             e.printStackTrace();
 
@@ -107,7 +107,7 @@ public class CsvImportUtil {
             }
             file.delete();
         }
-
+        return false;
     }
 
     /**
@@ -150,17 +150,15 @@ public class CsvImportUtil {
             List<List<String>> values = new ArrayList<>();
             int rowIndex = 0;
 
-            System.out.println( parser.getCurrentLineNumber());
             for (CSVRecord record : parser.getRecords()) {
 //              跳过表头
                 if (rowIndex == 0) {
                     rowIndex++;
                     continue;
                 }
-
 //              每行的内容
                 List<String> value = new ArrayList<>();
-                for (int i = 0; i < colNum; i++) {
+                for (int i = 0; i < record.size(); i++) {
                     value.add(record.get(i));
                 }
                 values.add(value);
