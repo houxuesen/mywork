@@ -181,7 +181,9 @@ public class TestController {
         String path = "F:\\sj\\附件二：系数 +一带一路国家.xlsx";
         InputStream fileInputStream = new FileInputStream(path);
         CodeTestVo codeTestVo = ExcelUtils.excelToCodeFileList(fileInputStream);
-        List<File> fileList = getFiles("F:\\sj\\2021");
+        String test_name = "2012";
+        String file_path = "F:\\sj\\"+test_name;
+        List<File> fileList = getFiles(file_path);
         List<File> files = new ArrayList();
         for(File file_temp:fileList){
             if(file_temp.getName().contains(".csv")){
@@ -202,7 +204,7 @@ public class TestController {
             }
         }
         //文件打入压缩包
-        File file = new File("F:\\sj\\sj_zip\\2012.zip");
+        File file = new File("F:\\sj\\sj_zip\\"+test_name+".zip");
         if (!file.exists()) {
             file.createNewFile();
         }
@@ -212,6 +214,7 @@ public class TestController {
         ZipUtil.zipFile(files, zipOut);
         zipOut.close();
         fous.close();
+        System.out.println("------执行结束-----------");
     }
 
     private CodeTestVo getCodeTestVo(MultipartFile codeFile) throws IOException {
