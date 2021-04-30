@@ -182,7 +182,8 @@ public class TestController {
         InputStream fileInputStream = new FileInputStream(path);
         CodeTestVo codeTestVo = ExcelUtils.excelToCodeFileList(fileInputStream);
         String test_name = "2021";
-        String file_path = "F:\\sj\\"+test_name;
+        String file_url = "F:\\sj\\";
+        String file_path = file_url+test_name;
         List<File> fileList = getFiles(file_path);
         List<File> files = new ArrayList();
         for(File file_temp:fileList){
@@ -198,7 +199,7 @@ public class TestController {
                     strings[2]=nf.format(detailFileVo.getNetWeight());
                     values.add(strings);
                 }
-                File file =  CsvImportUtil.makeTempCSVToPath(fileName,title,values,"F:\\sj\\sj_zip\\"+test_name);
+                File file =  CsvImportUtil.makeTempCSVToPath(fileName,title,values,file_url+"data\\"+test_name);
                 //CsvImportUtil.downloadFile(response,CsvImportUtil.makeTempCSV(fileName,title,values));
                 files.add(file);
             }
