@@ -15,12 +15,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletResponse;
-import java.io.File;
-import java.io.IOException;
-import java.io.OutputStream;
+import java.io.*;
 import java.text.NumberFormat;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.zip.ZipOutputStream;
 
 /**
  * @Author hxs
@@ -118,6 +117,39 @@ public class TestController {
         return list;
     }
 
+    private  static  List<DetailFileVo> getValues(File file){
+        List<List<String>> userRoleLists = CsvImportUtil.readCSV(file.getPath(), 11);
+        List<DetailFileVo> list = new ArrayList<>();
+        for(List<String> str:userRoleLists){
+            DetailFileVo detailFileVo = new DetailFileVo();
+            for( int j = 0;j<str.size();j++ ){
+                String data = str.get(j).trim();
+                if(j == 0){
+                    detailFileVo.setYear(data);
+                }else if(j == 1){
+                    detailFileVo.setTradeFlow(data);
+                }else if(j == 2){
+                    detailFileVo.setReporter(data);
+                }else if(j == 3){
+                    detailFileVo.setPartner(data);
+                }else if(j == 4){
+                    detailFileVo.setCode(data);
+                }else if(j == 7){
+                    detailFileVo.setNetWeight(StringUtils.isEmpty(data) ? null : Double.parseDouble(data));
+                }else if(j == 8){
+                    detailFileVo.setUnit(data);
+                }else if(j == 6){
+                    detailFileVo.setTradeValue(StringUtils.isEmpty(data) ? null : Double.parseDouble(data));
+                }else if(j==9){
+                    detailFileVo.setTradeQuantity(StringUtils.isEmpty(data) ? null : Double.parseDouble(data));
+                }
+            }
+
+            list.add(detailFileVo);
+        }
+        return list;
+    }
+
 
 
     @RequestMapping("file/upload")
@@ -144,13 +176,65 @@ public class TestController {
 
     }
 
+    public static void main(String[] args) throws IOException {
+        NumberFormat nf = NumberFormat.getInstance();
+        String path = "F:\\sj\\附件二：系数 +一带一路国家.xlsx";
+        InputStream fileInputStream = new FileInputStream(path);
+        CodeTestVo codeTestVo = ExcelUtils.excelToCodeFileList(fileInputStream);
+        List<File> fileList = getFiles("F:\\sj\\2021");
+        List<File> files = new ArrayList();
+        for(File file_temp:fileList){
+            if(file_temp.getName().contains(".csv")){
+                List<DetailFileVo>monthReportModels = getMonthReportModels(codeTestVo, getValues(file_temp));
+                String[] title = {"Source", "Target", "Weight"};
+                String fileName =  file_temp.getName().substring(0,file_temp.getName().lastIndexOf("."))+"数据处理";
+                List<String[]> values = new ArrayList<>();
+                for(DetailFileVo detailFileVo:monthReportModels){
+                    String[] strings = new String[3];
+                    strings[0]=detailFileVo.getPartner();
+                    strings[1]=detailFileVo.getReporter();
+                    strings[2]=nf.format(detailFileVo.getNetWeight());
+                    values.add(strings);
+                }
+                File file =  CsvImportUtil.makeTempCSV(fileName,title,values);
+                //CsvImportUtil.downloadFile(response,CsvImportUtil.makeTempCSV(fileName,title,values));
+                files.add(file);
+            }
+        }
+        //文件打入压缩包
+        File file = new File("F:\\sj\\sj_zip\\2012.zip");
+        if (!file.exists()) {
+            file.createNewFile();
+        }
+        // 创建文件输出流
+        FileOutputStream fous = new FileOutputStream(file);
+        ZipOutputStream zipOut = new ZipOutputStream(fous);
+        ZipUtil.zipFile(files, zipOut);
+        zipOut.close();
+        fous.close();
+    }
+
     private CodeTestVo getCodeTestVo(MultipartFile codeFile) throws IOException {
         CodeTestVo codeTestVos = ExcelUtils.excelToCodeFileList(codeFile.getInputStream());
         return codeTestVos;
     }
 
+    public static List<File> getFiles(String path) {
+        List<File> files = new ArrayList<File>();
+        File file = new File(path);
+        File[] tempList = file.listFiles();
 
-    private  List<DetailFileVo> getMonthReportModels(CodeTestVo codeTestVos,List<DetailFileVo> list) throws IOException {
+        for (int i = 0; i < tempList.length; i++) {
+            if (tempList[i].isFile()) {
+                files.add(tempList[i]);
+            }
+
+        }
+        return files;
+    }
+
+
+    private static   List<DetailFileVo> getMonthReportModels(CodeTestVo codeTestVos,List<DetailFileVo> list) throws IOException {
         List<CountryVo> countryVoList = codeTestVos.getCountryVoList();
         List<CodeFileVo> codeFileVoList = codeTestVos.getCodeFileVoList();
         Map<String, String> countryVoMap = countryVoList.stream().collect(Collectors.toMap(CountryVo::getCountryEName, CountryVo::getCountryName,(key1, key2) -> key2));
