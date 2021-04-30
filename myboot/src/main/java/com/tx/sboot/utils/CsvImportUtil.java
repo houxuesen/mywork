@@ -51,6 +51,37 @@ public class CsvImportUtil {
     }
 
     /**
+     * 把csv生成到指定路径
+     * @param fileName
+     * @param head
+     * @param values
+     * @param path
+     * @return
+     * @throws IOException
+     */
+    public static File makeTempCSVToPath(String fileName, String[] head, List<String[]> values,String path) throws IOException {
+//        创建文件
+        File dir = new File(path);
+        if(!dir.exists()){
+            dir.mkdir();
+        }
+        File file = File.createTempFile(fileName, ".csv", dir);
+        CSVFormat formator = CSVFormat.DEFAULT.withRecordSeparator(NEW_LINE_SEPARATOR);
+        BufferedWriter bufferedWriter =
+                new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), "UTF-8"));
+        CSVPrinter printer = new CSVPrinter(bufferedWriter, formator);
+//        写入表头
+        printer.printRecord(head);
+//        写入内容
+        for (String[] value : values) {
+            printer.printRecord(value);
+        }
+        printer.close();
+        bufferedWriter.close();
+        return file;
+    }
+
+    /**
      * @return boolean
      * @Description 下载文件
      * @Param response，file

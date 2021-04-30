@@ -181,7 +181,7 @@ public class TestController {
         String path = "F:\\sj\\附件二：系数 +一带一路国家.xlsx";
         InputStream fileInputStream = new FileInputStream(path);
         CodeTestVo codeTestVo = ExcelUtils.excelToCodeFileList(fileInputStream);
-        String test_name = "2012";
+        String test_name = "2021";
         String file_path = "F:\\sj\\"+test_name;
         List<File> fileList = getFiles(file_path);
         List<File> files = new ArrayList();
@@ -198,13 +198,13 @@ public class TestController {
                     strings[2]=nf.format(detailFileVo.getNetWeight());
                     values.add(strings);
                 }
-                File file =  CsvImportUtil.makeTempCSV(fileName,title,values);
+                File file =  CsvImportUtil.makeTempCSVToPath(fileName,title,values,"F:\\sj\\sj_zip\\"+test_name);
                 //CsvImportUtil.downloadFile(response,CsvImportUtil.makeTempCSV(fileName,title,values));
                 files.add(file);
             }
         }
         //文件打入压缩包
-        File file = new File("F:\\sj\\sj_zip\\"+test_name+".zip");
+        /*   File file = new File("F:\\sj\\sj_zip\\"+test_name+".zip");
         if (!file.exists()) {
             file.createNewFile();
         }
@@ -213,7 +213,7 @@ public class TestController {
         ZipOutputStream zipOut = new ZipOutputStream(fous);
         ZipUtil.zipFile(files, zipOut);
         zipOut.close();
-        fous.close();
+        fous.close();*/
         System.out.println("------执行结束-----------");
     }
 
