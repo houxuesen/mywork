@@ -16,6 +16,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
+import java.math.BigDecimal;
 import java.text.NumberFormat;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -177,46 +178,84 @@ public class TestController {
     }
 
     public static void main(String[] args) throws IOException {
-        NumberFormat nf = NumberFormat.getInstance();
+
         String path = "F:\\sj\\附件二：系数 +一带一路国家.xlsx";
         InputStream fileInputStream = new FileInputStream(path);
         CodeTestVo codeTestVo = ExcelUtils.excelToCodeFileList(fileInputStream);
-        String test_name = "2021";
-        String file_url = "F:\\sj\\";
-        String file_path = file_url+test_name;
-        List<File> fileList = getFiles(file_path);
-        List<File> files = new ArrayList();
-        for(File file_temp:fileList){
-            if(file_temp.getName().contains(".csv")){
-                List<DetailFileVo>monthReportModels = getMonthReportModels(codeTestVo, getValues(file_temp));
-                String[] title = {"Source", "Target", "Weight"};
-                String fileName =  file_temp.getName().substring(0,file_temp.getName().lastIndexOf("."))+"数据处理";
-                List<String[]> values = new ArrayList<>();
-                for(DetailFileVo detailFileVo:monthReportModels){
-                    String[] strings = new String[3];
-                    strings[0]=detailFileVo.getPartner();
-                    strings[1]=detailFileVo.getReporter();
-                    strings[2]=nf.format(detailFileVo.getNetWeight());
-                    values.add(strings);
-                }
-                File file =  CsvImportUtil.makeTempCSVToPath(fileName,title,values,file_url+"data\\"+test_name);
-                //CsvImportUtil.downloadFile(response,CsvImportUtil.makeTempCSV(fileName,title,values));
-                files.add(file);
-            }
-        }
-        //文件打入压缩包
-        /*   File file = new File("F:\\sj\\sj_zip\\"+test_name+".zip");
-        if (!file.exists()) {
-            file.createNewFile();
-        }
-        // 创建文件输出流
-        FileOutputStream fous = new FileOutputStream(file);
-        ZipOutputStream zipOut = new ZipOutputStream(fous);
-        ZipUtil.zipFile(files, zipOut);
-        zipOut.close();
-        fous.close();*/
+
+        createManyFile(codeTestVo);
+
         System.out.println("------执行结束-----------");
     }
+
+    static void createOneFile(CodeTestVo codeTestVo) throws IOException{
+        NumberFormat nf = NumberFormat.getInstance();
+        String file_url = "F:\\sj\\2015.6.csv";
+        File file_temp = new File(file_url);
+        if(file_temp.getName().contains(".csv")){
+            List<DetailFileVo>monthReportModels = getMonthReportModels(codeTestVo, getValues(file_temp));
+            String[] title = {"Source", "Target", "Weight"};
+            String fileName =  file_temp.getName().substring(0,file_temp.getName().lastIndexOf("."))+"数据处理";
+            List<String[]> values = new ArrayList<>();
+            for(DetailFileVo detailFileVo:monthReportModels){
+                String[] strings = new String[3];
+                strings[0]=detailFileVo.getPartner();
+                strings[1]=detailFileVo.getReporter();
+                strings[2]=nf.format(detailFileVo.getNetWeight());
+                values.add(strings);
+            }
+            File file =  CsvImportUtil.makeTempCSVToPath(fileName,title,values,"F:\\sj\\sj_zip\\");
+        }
+
+    }
+
+    static void  createManyFile(CodeTestVo codeTestVo) throws IOException {
+        NumberFormat nf = NumberFormat.getInstance();
+        for(int i = 0 ;i <= 8;i++){
+            int year = 2012+i;
+            String test_name = year+"年";
+            String file_url = "F:\\sj\\2012-2020\\";
+            String file_path = file_url+test_name;
+            List<File> fileList = getFiles(file_path);
+            List<DetailFileVo>monthReportModels = new ArrayList<>();
+            for(File file_temp:fileList){
+                if(file_temp.getName().contains(".csv")){
+                    monthReportModels.addAll(getMonthReportModels(codeTestVo, getValues(file_temp)));
+                }
+            }
+
+            String[] title = {"Source", "Target", "Weight"};
+            String fileName =  test_name+"数据处理";
+
+            Map<String,DetailFileVo> map = new LinkedHashMap<>();
+            for(DetailFileVo detailFileVo:monthReportModels){
+                String key = detailFileVo.getPartner()+detailFileVo.getReporter();
+                if(map.containsKey(key)){
+                    DetailFileVo dfVo =  map.get(key);
+                    //累加
+                    BigDecimal bigDecimal1 = new BigDecimal(dfVo.getNetWeight());
+                    BigDecimal bigDecimal2 = new BigDecimal(dfVo.getNetWeight());
+                    BigDecimal bigDecimal3 = bigDecimal1.add(bigDecimal2);
+                    dfVo.setNetWeight(bigDecimal3.doubleValue());
+                    map.put(key,dfVo);
+                }else{
+                    map.put(key,detailFileVo);
+                }
+            }
+            List<String[]> values = new ArrayList<>();
+            for(Map.Entry<String, DetailFileVo> entry : map.entrySet()){
+                String[] strings = new String[3];
+                strings[0]=entry.getValue().getPartner();
+                strings[1]=entry.getValue().getReporter();
+                strings[2]=nf.format(entry.getValue().getNetWeight());
+                values.add(strings);
+            }
+
+            CsvImportUtil.makeTempCSVToPath(fileName,title,values,"F:\\sj\\sj_zip\\"+test_name);
+
+        }
+    }
+
 
     private CodeTestVo getCodeTestVo(MultipartFile codeFile) throws IOException {
         CodeTestVo codeTestVos = ExcelUtils.excelToCodeFileList(codeFile.getInputStream());
