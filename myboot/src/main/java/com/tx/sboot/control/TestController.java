@@ -233,7 +233,7 @@ public class TestController {
                 if(map.containsKey(key)){
                     DetailFileVo dfVo =  map.get(key);
                     //累加
-                    BigDecimal bigDecimal1 = new BigDecimal(dfVo.getNetWeight());
+                    BigDecimal bigDecimal1 = new BigDecimal(detailFileVo.getNetWeight());
                     BigDecimal bigDecimal2 = new BigDecimal(dfVo.getNetWeight());
                     BigDecimal bigDecimal3 = bigDecimal1.add(bigDecimal2);
                     dfVo.setNetWeight(bigDecimal3.doubleValue());
