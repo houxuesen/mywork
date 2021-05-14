@@ -59,7 +59,7 @@ public class CsvImportUtil {
      * @return
      * @throws IOException
      */
-    public static File makeTempCSVToPath(String fileName, String[] head, List<String[]> values,String path) throws IOException {
+    public static File makeTempCSVToPath(String fileName, String[] head, List<Object[]> values,String path) throws IOException {
 //        创建文件
         File dir = new File(path);
         if(!dir.exists()){
@@ -73,7 +73,7 @@ public class CsvImportUtil {
 //        写入表头
         printer.printRecord(head);
 //        写入内容
-        for (String[] value : values) {
+        for (Object[] value : values) {
             printer.printRecord(value);
         }
         printer.close();

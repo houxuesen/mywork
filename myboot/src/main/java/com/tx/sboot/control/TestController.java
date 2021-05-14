@@ -189,19 +189,18 @@ public class TestController {
     }
 
     static void createOneFile(CodeTestVo codeTestVo) throws IOException{
-        NumberFormat nf = NumberFormat.getInstance();
         String file_url = "F:\\sj\\2015.6.csv";
         File file_temp = new File(file_url);
         if(file_temp.getName().contains(".csv")){
             List<DetailFileVo>monthReportModels = getMonthReportModels(codeTestVo, getValues(file_temp));
             String[] title = {"Source", "Target", "Weight"};
             String fileName =  file_temp.getName().substring(0,file_temp.getName().lastIndexOf("."))+"数据处理";
-            List<String[]> values = new ArrayList<>();
+            List<Object[]> values = new ArrayList<>();
             for(DetailFileVo detailFileVo:monthReportModels){
-                String[] strings = new String[3];
+                Object[] strings = new Object[3];
                 strings[0]=detailFileVo.getPartner();
                 strings[1]=detailFileVo.getReporter();
-                strings[2]=nf.format(detailFileVo.getNetWeight());
+                strings[2]=detailFileVo.getNetWeight();
                 values.add(strings);
             }
             File file =  CsvImportUtil.makeTempCSVToPath(fileName,title,values,"F:\\sj\\sj_zip\\");
@@ -210,11 +209,10 @@ public class TestController {
     }
 
     static void  createManyFile(CodeTestVo codeTestVo) throws IOException {
-        NumberFormat nf = NumberFormat.getInstance();
-        for(int i = 0 ;i <= 8;i++){
-            int year = 2012+i;
-            String test_name = year+"年";
-            String file_url = "F:\\sj\\2012-2020\\";
+        for(int i = 0 ;i <= 11;i++){
+            int year = 2000+i;
+            String test_name = year+"";
+            String file_url = "F:\\sj\\old_data\\";
             String file_path = file_url+test_name;
             List<File> fileList = getFiles(file_path);
             List<DetailFileVo>monthReportModels = new ArrayList<>();
@@ -242,12 +240,12 @@ public class TestController {
                     map.put(key,detailFileVo);
                 }
             }
-            List<String[]> values = new ArrayList<>();
+            List<Object[]> values = new ArrayList<>();
             for(Map.Entry<String, DetailFileVo> entry : map.entrySet()){
-                String[] strings = new String[3];
+                Object[] strings = new Object[3];
                 strings[0]=entry.getValue().getPartner();
                 strings[1]=entry.getValue().getReporter();
-                strings[2]=nf.format(entry.getValue().getNetWeight());
+                strings[2]=entry.getValue().getNetWeight();
                 values.add(strings);
             }
 
