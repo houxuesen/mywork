@@ -203,7 +203,7 @@ public class TestController {
                 strings[2]=detailFileVo.getNetWeight();
                 values.add(strings);
             }
-            File file =  CsvImportUtil.makeTempCSVToPath(fileName,title,values,"F:\\sj\\sj_zip\\");
+            CsvImportUtil.makeTempCSVToPath(fileName,title,values,"F:\\sj\\sj_zip\\");
         }
 
     }
