@@ -20,7 +20,6 @@ import java.math.BigDecimal;
 import java.text.NumberFormat;
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.zip.ZipOutputStream;
 
 /**
  * @Author hxs
@@ -30,6 +29,8 @@ import java.util.zip.ZipOutputStream;
  */
 @Controller
 public class TestController {
+
+
 
     @RequestMapping("/read/exl")
     public String exl() {
@@ -209,9 +210,9 @@ public class TestController {
     }
 
     static void  createManyFile(CodeTestVo codeTestVo) throws IOException {
-        for(int i = 0 ;i <= 11;i++){
+        for(int i = 12 ;i <= 12;i++){
             int year = 2000+i;
-            String test_name = year+"";
+            String test_name = year+"年";
             String file_url = "F:\\sj\\old_data\\";
             String file_path = file_url+test_name;
             List<File> fileList = getFiles(file_path);
@@ -240,6 +241,64 @@ public class TestController {
                     map.put(key,detailFileVo);
                 }
             }
+
+            Map<String,List<DetailFileVo>> groupMap = new LinkedHashMap<>();
+            for(Map.Entry<String, DetailFileVo> entry : map.entrySet()){
+                List<DetailFileVo> list = new ArrayList<>();
+                String key = "";
+                if(CsvImportUtil.IRON_ORE.contains(entry.getValue().getCode().replaceAll("HS-",""))){
+                    key = CsvImportUtil.IRON_ORE;
+                }else if(CsvImportUtil.PIG_IRON.contains(entry.getValue().getCode().replaceAll("HS-",""))){
+                    key = CsvImportUtil.PIG_IRON;
+                }else if(CsvImportUtil.CRUDE_STEEL.contains(entry.getValue().getCode().replaceAll("HS-",""))){
+                    key = CsvImportUtil.CRUDE_STEEL;
+                }else if(CsvImportUtil.STEEL.contains(entry.getValue().getCode().replaceAll("HS-",""))){
+                    key = CsvImportUtil.STEEL;
+                }else if(CsvImportUtil.STEEL_PRODUCTS.contains(entry.getValue().getCode().replaceAll("HS-",""))){
+                    key = CsvImportUtil.STEEL_PRODUCTS;
+                }else if(CsvImportUtil.SCRAP.contains(entry.getValue().getCode().replaceAll("HS-",""))){
+                    key = CsvImportUtil.SCRAP;
+                }
+                if(groupMap.containsKey(key)){
+                    list = groupMap.get(key);
+                    list.add(entry.getValue());
+                }else {
+                    list.add(entry.getValue());
+                }
+                groupMap.put(key,list);
+
+            }
+
+
+            for(Map.Entry<String, List<DetailFileVo>> entry : groupMap.entrySet()){
+                List<Object[]> values = new ArrayList<>();
+                List<DetailFileVo> detailFileVos = entry.getValue();
+                for(DetailFileVo detailFileVo:detailFileVos){
+                    Object[] strings = new Object[3];
+                    strings[0]=detailFileVo.getPartner();
+                    strings[1]=detailFileVo.getReporter();
+                    strings[2]=detailFileVo.getNetWeight();
+                    values.add(strings);
+                }
+                String endName = "";
+                if(CsvImportUtil.IRON_ORE.equals(entry.getKey())){
+                    endName = "铁矿石";
+                }else if(CsvImportUtil.PIG_IRON.equals(entry.getKey())){
+                    endName = "生铁";
+                }else if(CsvImportUtil.CRUDE_STEEL.equals(entry.getKey())){
+                    endName = "粗钢";
+                }else if(CsvImportUtil.STEEL.equals(entry.getKey())){
+                    endName = "钢材";
+                }else if(CsvImportUtil.STEEL_PRODUCTS.equals(entry.getKey())){
+                    endName = "钢铁制品";
+                }else if(CsvImportUtil.SCRAP.equals(entry.getKey())){
+                    endName = "废料";
+                }
+
+                CsvImportUtil.makeTempCSVToPath(fileName+endName,title,values,"F:\\sj\\sj_zip\\"+test_name);
+            }
+
+          /*  //最终结果处理分类
             List<Object[]> values = new ArrayList<>();
             for(Map.Entry<String, DetailFileVo> entry : map.entrySet()){
                 Object[] strings = new Object[3];
@@ -249,7 +308,7 @@ public class TestController {
                 values.add(strings);
             }
 
-            CsvImportUtil.makeTempCSVToPath(fileName,title,values,"F:\\sj\\sj_zip\\"+test_name);
+            CsvImportUtil.makeTempCSVToPath(fileName,title,values,"F:\\sj\\sj_zip\\"+test_name);*/
 
         }
     }
