@@ -210,9 +210,9 @@ public class TestController {
     }
 
     static void  createManyFile(CodeTestVo codeTestVo) throws IOException {
-        for(int i = 12 ;i <= 12;i++){
+        for(int i = 0 ;i <= 11;i++){
             int year = 2000+i;
-            String test_name = year+"年";
+            String test_name = year+"";
             String file_url = "F:\\sj\\old_data\\";
             String file_path = file_url+test_name;
             List<File> fileList = getFiles(file_path);
@@ -223,12 +223,12 @@ public class TestController {
                 }
             }
 
-            String[] title = {"Source", "Target", "Weight"};
+            String[] title = {"Source", "Target", "Weight","Code"};
             String fileName =  test_name+"数据处理";
 
             Map<String,DetailFileVo> map = new LinkedHashMap<>();
             for(DetailFileVo detailFileVo:monthReportModels){
-                String key = detailFileVo.getPartner()+detailFileVo.getReporter();
+                String key = detailFileVo.getPartner()+detailFileVo.getReporter()+detailFileVo.getCode();
                 if(map.containsKey(key)){
                     DetailFileVo dfVo =  map.get(key);
                     //累加
@@ -241,6 +241,19 @@ public class TestController {
                     map.put(key,detailFileVo);
                 }
             }
+
+            //最终结果处理分类
+            List<Object[]> totalVals = new ArrayList<>();
+            for(Map.Entry<String, DetailFileVo> entry : map.entrySet()){
+                Object[] strings = new Object[4];
+                strings[0]=entry.getValue().getPartner();
+                strings[1]=entry.getValue().getReporter();
+                strings[2]=entry.getValue().getNetWeight();
+                strings[3]=entry.getValue().getCode();
+                totalVals.add(strings);
+            }
+
+            CsvImportUtil.makeTempCSVToPath(fileName,title,totalVals,"F:\\sj\\sj_zip\\"+test_name);
 
             Map<String,List<DetailFileVo>> groupMap = new LinkedHashMap<>();
             for(Map.Entry<String, DetailFileVo> entry : map.entrySet()){
@@ -274,10 +287,11 @@ public class TestController {
                 List<Object[]> values = new ArrayList<>();
                 List<DetailFileVo> detailFileVos = entry.getValue();
                 for(DetailFileVo detailFileVo:detailFileVos){
-                    Object[] strings = new Object[3];
+                    Object[] strings = new Object[4];
                     strings[0]=detailFileVo.getPartner();
                     strings[1]=detailFileVo.getReporter();
                     strings[2]=detailFileVo.getNetWeight();
+                    strings[3]=detailFileVo.getCode();
                     values.add(strings);
                 }
                 String endName = "";
@@ -297,19 +311,6 @@ public class TestController {
 
                 CsvImportUtil.makeTempCSVToPath(fileName+endName,title,values,"F:\\sj\\sj_zip\\"+test_name);
             }
-
-          /*  //最终结果处理分类
-            List<Object[]> values = new ArrayList<>();
-            for(Map.Entry<String, DetailFileVo> entry : map.entrySet()){
-                Object[] strings = new Object[3];
-                strings[0]=entry.getValue().getPartner();
-                strings[1]=entry.getValue().getReporter();
-                strings[2]=entry.getValue().getNetWeight();
-                values.add(strings);
-            }
-
-            CsvImportUtil.makeTempCSVToPath(fileName,title,values,"F:\\sj\\sj_zip\\"+test_name);*/
-
         }
     }
 
@@ -365,8 +366,15 @@ public class TestController {
         }
 
 
-        Map<String, DetailFileVo> detailFileVoMap = new HashMap<>();
+        Map<String, DetailFileVo> detailFileVoMap = new LinkedHashMap<>();
         newDetailFileVos.forEach(detailFileVo -> {
+
+            if(detailFileVo.getReporter().equals("United Arab Emirates")
+                    && detailFileVo.getPartner().equals("Albania")
+                    && detailFileVo.getCode().equals("HS-2601")){
+                System.out.println("11111111111111111111");
+            }
+
             //去重Partner和 code 相同   保留 netWeight 最大值
             String key = detailFileVo.getReporter() +"-"+ detailFileVo.getPartner()+"-" + detailFileVo.getCode();
             if (detailFileVoMap.containsKey(key)) {
@@ -411,6 +419,13 @@ public class TestController {
 
         List<DetailFileVo>  dfVo = new ArrayList<>();
         detailFileVoMap.forEach((s, detailFileVo) -> {
+
+            if(detailFileVo.getReporter().equals("United Arab Emirates")
+                    && detailFileVo.getPartner().equals("Albania")
+                    && detailFileVo.getCode().equals("HS-2601")){
+                System.out.println("2222222222222");
+            }
+
             //若“Trade Quantity”和“Net Weight”均为0或空白，且“Trade Value”数据也为0或空白，删除
             if(!((detailFileVo.getTradeQuantity() == null || detailFileVo.getTradeQuantity() == 0)
                     && (detailFileVo.getNetWeight() == null || detailFileVo.getNetWeight() == 0)
@@ -470,17 +485,25 @@ public class TestController {
             detailFileVos.add(detailFileVo);
         });
 
-        Map<String,DetailFileVo> endMap = new HashMap<>();
+
+        //补齐后  根据年份进出口国家求和
+        Map<String,DetailFileVo> endMap = new LinkedHashMap<>();
         detailFileVos.forEach(detailFileVo -> {
+            if(detailFileVo.getReporter().equals("United Arab Emirates")
+                    && detailFileVo.getPartner().equals("Albania")
+                    && detailFileVo.getCode().equals("HS-2601")){
+                System.out.println("3333333333333");
+            }
             if(detailFileVo.getReporter().equals(detailFileVo.getPartner())){
                 return;
             }
-            if(endMap.containsKey(detailFileVo.getYear()+detailFileVo.getReporter()+detailFileVo.getPartner())){
-                DetailFileVo df = endMap.get(detailFileVo.getYear()+detailFileVo.getReporter()+detailFileVo.getPartner());
+            String key = detailFileVo.getYear()+detailFileVo.getReporter()+detailFileVo.getPartner()+detailFileVo.getCode();
+            if(endMap.containsKey(key)){
+                DetailFileVo df = endMap.get(key);
                 df.setNetWeight(df.getNetWeight()+detailFileVo.getNetWeight());
-                endMap.put(detailFileVo.getYear()+detailFileVo.getReporter()+detailFileVo.getPartner(),df);
+                endMap.put(key,df);
             }else{
-                endMap.put(detailFileVo.getYear()+detailFileVo.getReporter()+detailFileVo.getPartner(),detailFileVo);
+                endMap.put(key,detailFileVo);
             }
         });
 
