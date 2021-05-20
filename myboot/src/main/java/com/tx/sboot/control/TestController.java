@@ -210,9 +210,9 @@ public class TestController {
     }
 
     static void  createManyFile(CodeTestVo codeTestVo) throws IOException {
-        for(int i = 0 ;i <= 11;i++){
+        for(int i = 12 ;i <= 20;i++){
             int year = 2000+i;
-            String test_name = year+"";
+            String test_name = year+"年";
             String file_url = "F:\\sj\\old_data\\";
             String file_path = file_url+test_name;
             List<File> fileList = getFiles(file_path);
@@ -368,13 +368,6 @@ public class TestController {
 
         Map<String, DetailFileVo> detailFileVoMap = new LinkedHashMap<>();
         newDetailFileVos.forEach(detailFileVo -> {
-
-            if(detailFileVo.getReporter().equals("United Arab Emirates")
-                    && detailFileVo.getPartner().equals("Albania")
-                    && detailFileVo.getCode().equals("HS-2601")){
-                System.out.println("11111111111111111111");
-            }
-
             //去重Partner和 code 相同   保留 netWeight 最大值
             String key = detailFileVo.getReporter() +"-"+ detailFileVo.getPartner()+"-" + detailFileVo.getCode();
             if (detailFileVoMap.containsKey(key)) {
@@ -419,13 +412,6 @@ public class TestController {
 
         List<DetailFileVo>  dfVo = new ArrayList<>();
         detailFileVoMap.forEach((s, detailFileVo) -> {
-
-            if(detailFileVo.getReporter().equals("United Arab Emirates")
-                    && detailFileVo.getPartner().equals("Albania")
-                    && detailFileVo.getCode().equals("HS-2601")){
-                System.out.println("2222222222222");
-            }
-
             //若“Trade Quantity”和“Net Weight”均为0或空白，且“Trade Value”数据也为0或空白，删除
             if(!((detailFileVo.getTradeQuantity() == null || detailFileVo.getTradeQuantity() == 0)
                     && (detailFileVo.getNetWeight() == null || detailFileVo.getNetWeight() == 0)
@@ -489,11 +475,6 @@ public class TestController {
         //补齐后  根据年份进出口国家求和
         Map<String,DetailFileVo> endMap = new LinkedHashMap<>();
         detailFileVos.forEach(detailFileVo -> {
-            if(detailFileVo.getReporter().equals("United Arab Emirates")
-                    && detailFileVo.getPartner().equals("Albania")
-                    && detailFileVo.getCode().equals("HS-2601")){
-                System.out.println("3333333333333");
-            }
             if(detailFileVo.getReporter().equals(detailFileVo.getPartner())){
                 return;
             }
