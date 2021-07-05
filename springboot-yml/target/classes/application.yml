@@ -1,7 +1,7 @@
 server:
   port: 8081
 yml:
-  name: 
+  name: xiaoming
   age: 50
   birth: 2020/12/4 17:02:45
   hobby:

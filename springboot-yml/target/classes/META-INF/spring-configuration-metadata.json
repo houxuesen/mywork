@@ -6,6 +6,12 @@
       "sourceType": "cn.hxs.model.AcmeProperties"
     },
     {
+      "name": "acme",
+      "type": "cn.hxs.model.AnotherAcmeProperties",
+      "sourceType": "cn.hxs.service.ConfigService",
+      "sourceMethod": "getAnotherAcmeProperties()"
+    },
+    {
       "name": "yml",
       "type": "cn.hxs.model.UserModel",
       "sourceType": "cn.hxs.model.UserModel"
@@ -18,9 +24,19 @@
       "sourceType": "cn.hxs.model.AcmeProperties"
     },
     {
+      "name": "acme.enabled",
+      "type": "java.lang.Boolean",
+      "sourceType": "cn.hxs.model.AnotherAcmeProperties"
+    },
+    {
       "name": "acme.remote-address",
       "type": "java.net.InetAddress",
       "sourceType": "cn.hxs.model.AcmeProperties"
+    },
+    {
+      "name": "acme.remote-address",
+      "type": "java.net.InetAddress",
+      "sourceType": "cn.hxs.model.AnotherAcmeProperties"
     },
     {
       "name": "acme.security",

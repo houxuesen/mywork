@@ -3,10 +3,7 @@ package com.tx.sboot.control;
 import com.tx.sboot.utils.CsvImportUtil;
 import com.tx.sboot.utils.ExcelUtils;
 import com.tx.sboot.utils.ZipUtil;
-import com.tx.sboot.vo.CodeFileVo;
-import com.tx.sboot.vo.CodeTestVo;
-import com.tx.sboot.vo.CountryVo;
-import com.tx.sboot.vo.DetailFileVo;
+import com.tx.sboot.vo.*;
 import org.apache.poi.hssf.usermodel.*;
 import org.springframework.stereotype.Controller;
 import org.springframework.util.StringUtils;
@@ -19,6 +16,10 @@ import java.io.*;
 import java.math.BigDecimal;
 import java.text.NumberFormat;
 import java.util.*;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -179,14 +180,72 @@ public class TestController {
     }
 
     public static void main(String[] args) throws IOException {
+        Map<String,List<List<List<String>>>> map = new LinkedHashMap<>();
+        createOrderGroup("D:\\exl\\base",map);
+        for (Map.Entry<String, List<List<List<String>>>> m : map.entrySet()) {
+            System.out.println("key:" + m.getKey() + " value:" + m.getValue());
+            for(int i = 0 ; i<m.getValue().size() ; i++ ){
+                //循环所有年份数据 从 2000年开始
+                List<List<String>> results = m.getValue().get(i);
+                int year = 2000;
+                List<GroupVo> groupVos = new ArrayList<>();
+                for(int j = 0;j<results.size();j++){
+                    List<String> stringList = results.get(j);
+                    GroupVo groupVo = new GroupVo();
+                    groupVo.setId(stringList.get(0));
+                    groupVo.setInDegree(Double.parseDouble(stringList.get(3)));;
+                    groupVo.setOutDegree(Double.parseDouble(stringList.get(4)));
+                    groupVo.setDegree(Double.parseDouble(stringList.get(5)));
+                    groupVo.setBetweenessCentrality(Double.parseDouble(stringList.get(12)));
+                    groupVos.add(groupVo);
+                }
+                List<GroupVo>  inDegrees = groupVos.stream().sorted(Comparator.comparing(GroupVo::getInDegree)).collect(Collectors.toList());
+                List<GroupVo>  outDegrees = groupVos.stream().sorted(Comparator.comparing(GroupVo::getOutDegree)).collect(Collectors.toList());
+                List<GroupVo>  degrees = groupVos.stream().sorted(Comparator.comparing(GroupVo::getDegree)).collect(Collectors.toList());
+                List<GroupVo>  betweenessCentralitys = groupVos.stream().sorted(Comparator.comparing(GroupVo::getBetweenessCentrality)).collect(Collectors.toList());
 
+            }
+
+        }
+        System.out.println(map.size()+"------执行结束-----------");
+    }
+
+
+    static void getCodeVal() throws FileNotFoundException {
         String path = "F:\\sj\\附件二：系数 +一带一路国家.xlsx";
         InputStream fileInputStream = new FileInputStream(path);
         CodeTestVo codeTestVo = ExcelUtils.excelToCodeFileList(fileInputStream);
+        ScheduledExecutorService service = Executors.newScheduledThreadPool(5);
+        final CountDownLatch block = new CountDownLatch(5);
+        // 1. 延迟一定时间执行一次
+        service.execute(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    createManyFile(codeTestVo,0,11,"");
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }finally {
+                    block.countDown();
+                }
+            }
+        });
 
-        createManyFile(codeTestVo);
 
-        System.out.println("------执行结束-----------");
+        service.execute(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    createManyFile(codeTestVo,11,20,"年");
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }finally {
+                    block.countDown();
+                }
+            }
+        });
+
+        service.shutdown();
     }
 
     static void createOneFile(CodeTestVo codeTestVo) throws IOException{
@@ -209,10 +268,42 @@ public class TestController {
 
     }
 
-    static void  createManyFile(CodeTestVo codeTestVo) throws IOException {
-        for(int i = 12 ;i <= 20;i++){
+
+    static void createOrderGroup(String path,Map<String,List<List<List<String>>>> listMap) throws FileNotFoundException {
+        File f = new File(path);//获取路径  F:\测试目录
+        if (!f.exists()) {
+            System.out.println(path + " not exists");//不存在就输出
+            return;
+        }
+
+        File fa[] = f.listFiles();//用数组接收
+        for (int i = 0; i < fa.length; i++) {//循环遍历
+            File fs = fa[i];//获取数组中的第i个
+            if (fs.isDirectory()) {
+                System.out.println(fs.getName() + " [目录]");//如果是目录就输出
+                createOrderGroup(path+"\\"+fs.getName(),listMap);
+            } else {
+                System.out.println(fs.getName());//否则直接输出
+                //获取文件数据  准备排序
+                List<List<String>> result = CsvImportUtil.readCSV(path+"\\"+fs.getName(), 11);
+                if(listMap.containsKey(path)){
+                    List<List<List<String>>> lists = listMap.get(path);
+                    lists.add(result);
+                    listMap.put(path,lists);
+                }else{
+                    List<List<List<String>>> lists =  new ArrayList<>();
+                    lists.add(result);
+                    listMap.put(path,lists);
+                }
+            }
+        }
+    }
+
+
+    static void  createManyFile(CodeTestVo codeTestVo,int start,int end,String unitName) throws IOException {
+        for(int i = start ;i <= end;i++){
             int year = 2000+i;
-            String test_name = year+"年";
+            String test_name = year+ unitName;
             String file_url = "F:\\sj\\old_data\\";
             String file_path = file_url+test_name;
             List<File> fileList = getFiles(file_path);
@@ -223,7 +314,7 @@ public class TestController {
                 }
             }
 
-            String[] title = {"Source", "Target", "Weight","Code"};
+            String[] title = {"Source", "Target", "Weight"};
             String fileName =  test_name+"数据处理";
 
             Map<String,DetailFileVo> map = new LinkedHashMap<>();
@@ -286,12 +377,32 @@ public class TestController {
             for(Map.Entry<String, List<DetailFileVo>> entry : groupMap.entrySet()){
                 List<Object[]> values = new ArrayList<>();
                 List<DetailFileVo> detailFileVos = entry.getValue();
+                List<DetailFileVo> endDetailFileVos = new ArrayList<>();
+                Map<String,DetailFileVo> resultMap = new LinkedHashMap<>();
                 for(DetailFileVo detailFileVo:detailFileVos){
-                    Object[] strings = new Object[4];
+                    String key = detailFileVo.getPartner()+detailFileVo.getReporter();
+                    if(resultMap.containsKey(key)){
+                        DetailFileVo dfVo =  resultMap.get(key);
+                        //累加
+                        BigDecimal bigDecimal1 = new BigDecimal(detailFileVo.getNetWeight());
+                        BigDecimal bigDecimal2 = new BigDecimal(dfVo.getNetWeight());
+                        BigDecimal bigDecimal3 = bigDecimal1.add(bigDecimal2);
+                        dfVo.setNetWeight(bigDecimal3.doubleValue());
+                        resultMap.put(key,dfVo);
+                    }else{
+                        resultMap.put(key,detailFileVo);
+                    }
+                }
+
+                resultMap.forEach((s,dfVo) ->{
+                    endDetailFileVos.add(dfVo);
+                });
+
+                for(DetailFileVo detailFileVo:endDetailFileVos){
+                    Object[] strings = new Object[3];
                     strings[0]=detailFileVo.getPartner();
                     strings[1]=detailFileVo.getReporter();
                     strings[2]=detailFileVo.getNetWeight();
-                    strings[3]=detailFileVo.getCode();
                     values.add(strings);
                 }
                 String endName = "";

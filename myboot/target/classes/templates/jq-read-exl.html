@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+</head>
+<body>
+    <input id="lefile" type="file" >  
+    <button type="button" id="button-next">确认</button>
+</body>
+<script src="https://cdn.bootcss.com/jquery/3.2.1/jquery.js"></script> 
+<script src="https://cdn.bootcss.com/xlsx/0.11.5/xlsx.core.min.js"></script> 
+
+<script>
+    var fileType = 0;  //默认0（0不正确，1正确）
+    var wb;                                     //读取Excel的数据
+    var rABS = false;                      //是否将文件读取为二进制字符串
+    var excelTab;                         //Excel
+    $("#lefile").on('change',function(){
+        var file = $('#lefile').get(0);  //得到文件对象
+        var filename = $("#lefile").val();
+        var idx = filename.lastIndexOf(".");   
+        if (idx != -1){   
+            ext = filename.substr(idx+1).toUpperCase();   
+            ext = ext.toLowerCase( ); 
+        // alert("ext="+ext);
+            if (ext != 'xls' && ext != 'xlsx' ){
+                alert("只能上传.xls和.xlsx类型的文件!"); 
+                fileType = 0;
+                return;  
+            }else{
+                fileType = 1;
+            }
+        } else {  
+            alert("只能上传.xls和.xlsx类型的文件!"); 
+            fileType = 0;
+            return;
+        }   
+    })
+
+    $("#button-next").on('click',function(){
+        if(fileType == 0){
+            alert("只能上传.xls和.xlsx类型的文件!"); 
+            return;  
+        }else{
+            var file = $('#lefile').get(0);  //得到文件对象
+            importf(file);     //进行读取操作
+        }
+    })
+
+    function importf(obj) {
+        if(!obj.files) {
+            return;
+        } 
+        var f = obj.files[0];
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            var data = e.target.result;
+            if(rABS) {
+                wb = XLSX.read(btoa(fixdata(data)), {//手动转化
+                type: 'base64'
+                });
+            } else {
+                wb = XLSX.read(data, {
+                type: 'binary'
+                });
+            }
+                    
+            excelTab = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+            console.log(excelTab);
+            printData(excelTab);
+        };
+        if(rABS) {
+            reader.readAsArrayBuffer(f);
+        } else {
+            reader.readAsBinaryString(f);
+        }
+    }
+
+    function fixdata(data) { //文件流转BinaryString
+        var o = "",
+        l = 0,
+        w = 10240;
+        for(; l < data.byteLength / w; ++l) o += String.fromCharCode.apply(null, new Uint8Array(data.slice(l * w, l * w + w)));
+        o += String.fromCharCode.apply(null, new Uint8Array(data.slice(l * w)));
+        return o;
+    }
+
+    function printData(excelTab){
+        for( var i = 0; i < excelTab.length; i++ ){
+            console.log(excelTab[i]);
+			 for (var key in excelTab[i])
+			{
+				console.log(key); console.log(excelTab[i][key]);
+			}
+        }
+    }
+</script>
+</html>
