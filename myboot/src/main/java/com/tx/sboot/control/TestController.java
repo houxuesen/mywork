@@ -183,29 +183,174 @@ public class TestController {
         Map<String,List<List<List<String>>>> map = new LinkedHashMap<>();
         createOrderGroup("D:\\exl\\base",map);
         for (Map.Entry<String, List<List<List<String>>>> m : map.entrySet()) {
-            System.out.println("key:" + m.getKey() + " value:" + m.getValue());
+            System.out.println(m.getKey());
+            Map<Integer,DegreeVo> degreeVoMap = new LinkedHashMap<>();
+            int year = 2000;
             for(int i = 0 ; i<m.getValue().size() ; i++ ){
                 //循环所有年份数据 从 2000年开始
                 List<List<String>> results = m.getValue().get(i);
-                int year = 2000;
                 List<GroupVo> groupVos = new ArrayList<>();
                 for(int j = 0;j<results.size();j++){
                     List<String> stringList = results.get(j);
                     GroupVo groupVo = new GroupVo();
                     groupVo.setId(stringList.get(0));
-                    groupVo.setInDegree(Double.parseDouble(stringList.get(3)));;
-                    groupVo.setOutDegree(Double.parseDouble(stringList.get(4)));
-                    groupVo.setDegree(Double.parseDouble(stringList.get(5)));
-                    groupVo.setBetweenessCentrality(Double.parseDouble(stringList.get(12)));
+                    groupVo.setInDegree(StringUtils.isEmpty(stringList.get(3)) ? null :Double.parseDouble(stringList.get(3)));;
+                    groupVo.setOutDegree(StringUtils.isEmpty(stringList.get(4)) ? null :Double.parseDouble(stringList.get(4)));
+                    groupVo.setDegree(StringUtils.isEmpty(stringList.get(5)) ? null :Double.parseDouble(stringList.get(5)));
+                    groupVo.setBetweenessCentrality(Double.parseDouble(StringUtils.isEmpty(stringList.get(12)) ? null :stringList.get(12)));
                     groupVos.add(groupVo);
                 }
                 List<GroupVo>  inDegrees = groupVos.stream().sorted(Comparator.comparing(GroupVo::getInDegree)).collect(Collectors.toList());
                 List<GroupVo>  outDegrees = groupVos.stream().sorted(Comparator.comparing(GroupVo::getOutDegree)).collect(Collectors.toList());
                 List<GroupVo>  degrees = groupVos.stream().sorted(Comparator.comparing(GroupVo::getDegree)).collect(Collectors.toList());
                 List<GroupVo>  betweenessCentralitys = groupVos.stream().sorted(Comparator.comparing(GroupVo::getBetweenessCentrality)).collect(Collectors.toList());
+                DegreeVo degreeVo = new DegreeVo();
+                degreeVo.setInDegrees(inDegrees);
+                degreeVo.setOutDegrees(outDegrees);
+                degreeVo.setDegrees(degrees);
+                degreeVo.setBetweenessCentralitys(betweenessCentralitys);
+
+                degreeVoMap.put(year+i,degreeVo);
+            }
+
+            //处理最终导出结果
+            String[] title = null;
+            List<Object[]> values = new ArrayList<>();
+            int inDegreesCount = 0;
+            int outDegreesCount = 0;
+            int degreesCount = 0;
+            int betweenessCentralitysCount = 0;
+            for(Map.Entry<Integer,DegreeVo> degreeVoEntry : degreeVoMap.entrySet()){
+                List<GroupVo> inDegrees = degreeVoEntry.getValue().getInDegrees();
+                if(inDegreesCount < inDegrees.size()){
+                    inDegreesCount =  inDegrees.size();
+                }
+                List<GroupVo> outDegrees = degreeVoEntry.getValue().getOutDegrees();
+                if(outDegreesCount < outDegrees.size()){
+                    outDegreesCount =  outDegrees.size();
+                }
+
+                List<GroupVo> degrees = degreeVoEntry.getValue().getDegrees();
+                if(degreesCount < degrees.size()){
+                    degreesCount =  degrees.size();
+                }
+
+                List<GroupVo> betweenessCentralitys = degreeVoEntry.getValue().getBetweenessCentralitys();
+                if(betweenessCentralitysCount < betweenessCentralitys.size()){
+                    betweenessCentralitysCount =  betweenessCentralitys.size();
+                }
 
             }
 
+
+            for(int i = 0; i< inDegreesCount ;i++){
+                if(i == 0){
+                    Object[] head = new Object[21];
+                    head[0] = "入度";
+                    values.add(head);
+                    Object[] objects = new Object[21];
+                    for(int j = 1 ;j<=20;j++ ){
+                        objects[j] = 2000+j;
+                    }
+                    values.add(objects);
+                }
+                Object[] objects = new Object[21];
+                objects[0] = i+1;
+                for(int j = 1 ;j<=20;j++){
+                    for(Map.Entry<Integer,DegreeVo> degreeVoEntry : degreeVoMap.entrySet()){
+                        if(degreeVoEntry.getKey() == 2000+j-1){
+                            List<GroupVo> inDegrees = degreeVoEntry.getValue().getInDegrees();
+                            if(inDegrees.size() > i){
+                                objects[j] =  inDegrees.get(i).getId();
+                            }
+                        }
+                    }
+                }
+                values.add(objects);
+            }
+
+            for(int i = 0; i< outDegreesCount ;i++){
+                if(i == 0){
+                    Object[] head = new Object[21];
+                    head[0] = "出度";
+                    values.add(head);
+                    Object[] objects = new Object[21];
+                    for(int j = 1 ;j<=20;j++ ){
+                        objects[j] = 2000+j;
+                    }
+                    values.add(objects);
+                }
+                Object[] objects = new Object[21];
+                objects[0] = i+1;
+                for(int j = 1 ;j<=20;j++){
+                    for(Map.Entry<Integer,DegreeVo> degreeVoEntry : degreeVoMap.entrySet()){
+                        if(degreeVoEntry.getKey() == 2000+j-1){
+                            List<GroupVo> outDegrees = degreeVoEntry.getValue().getOutDegrees();
+                            if(outDegrees.size() > i){
+                                objects[j] =  outDegrees.get(i).getId();
+                            }
+                        }
+                    }
+                }
+                values.add(objects);
+            }
+
+            for(int i = 0; i< degreesCount ;i++){
+                if(i == 0){
+                    Object[] head = new Object[21];
+                    head[0] = "度";
+                    values.add(head);
+                    Object[] objects = new Object[21];
+                    for(int j = 1 ;j<=20;j++ ){
+                        objects[j] = 2000+j;
+                    }
+                    values.add(objects);
+                }
+                Object[] objects = new Object[21];
+                objects[0] = i+1;
+                for(int j = 1 ;j<=20;j++){
+                    for(Map.Entry<Integer,DegreeVo> degreeVoEntry : degreeVoMap.entrySet()){
+                        if(degreeVoEntry.getKey() == 2000+j-1){
+                            List<GroupVo> degrees = degreeVoEntry.getValue().getDegrees();
+                            if(degrees.size() > i){
+                                objects[j] =  degrees.get(i).getId();
+                            }
+                        }
+                    }
+                }
+                values.add(objects);
+            }
+
+            for(int i = 0; i< betweenessCentralitysCount ;i++){
+                if(i == 0){
+                    Object[] head = new Object[21];
+                    head[0] = "中介度";
+                    values.add(head);
+                    Object[] objects = new Object[21];
+                    for(int j = 1 ;j<=20;j++ ){
+                        objects[j] = 2000+j;
+                    }
+                    values.add(objects);
+                }
+                Object[] objects = new Object[21];
+                objects[0] = i+1;
+                for(int j = 1 ;j<=20;j++){
+                    for(Map.Entry<Integer,DegreeVo> degreeVoEntry : degreeVoMap.entrySet()){
+                        if(degreeVoEntry.getKey() == 2000+j-1){
+                            List<GroupVo> betweenessCentralitys = degreeVoEntry.getValue().getBetweenessCentralitys();
+                            if(betweenessCentralitys.size() > i){
+                                objects[j] =  betweenessCentralitys.get(i).getId();
+                            }
+                        }
+                    }
+                }
+                values.add(objects);
+            }
+
+
+
+            CsvImportUtil.makeTempCSVToPath(m.getKey(),title,values,"D:\\exl\\out");
+            System.out.println(values.size());
         }
         System.out.println(map.size()+"------执行结束-----------");
     }

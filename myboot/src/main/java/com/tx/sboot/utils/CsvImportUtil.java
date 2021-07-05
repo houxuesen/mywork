@@ -102,7 +102,10 @@ public class CsvImportUtil {
                 new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), "UTF-8"));
         CSVPrinter printer = new CSVPrinter(bufferedWriter, formator);
 //        写入表头
-        printer.printRecord(head);
+        if(head != null){
+            printer.printRecord(head);
+        }
+
 //        写入内容
         for (Object[] value : values) {
             printer.printRecord(value);
