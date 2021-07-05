@@ -197,17 +197,39 @@ public class TestController {
                     groupVo.setInDegree(StringUtils.isEmpty(stringList.get(3)) ? null :Double.parseDouble(stringList.get(3)));;
                     groupVo.setOutDegree(StringUtils.isEmpty(stringList.get(4)) ? null :Double.parseDouble(stringList.get(4)));
                     groupVo.setDegree(StringUtils.isEmpty(stringList.get(5)) ? null :Double.parseDouble(stringList.get(5)));
+                    groupVo.setG(StringUtils.isEmpty(stringList.get(6)) ? null :Double.parseDouble(stringList.get(6)));;
+                    groupVo.setH(StringUtils.isEmpty(stringList.get(7)) ? null :Double.parseDouble(stringList.get(7)));
+                    groupVo.setI(StringUtils.isEmpty(stringList.get(8)) ? null :Double.parseDouble(stringList.get(8)));
+                    groupVo.setK(StringUtils.isEmpty(stringList.get(10)) ? null :Double.parseDouble(stringList.get(10)));
                     groupVo.setBetweenessCentrality(Double.parseDouble(StringUtils.isEmpty(stringList.get(12)) ? null :stringList.get(12)));
+                    groupVo.setO(Double.parseDouble(StringUtils.isEmpty(stringList.get(14)) ? null :stringList.get(14)));
+                    groupVo.setQ(Double.parseDouble(StringUtils.isEmpty(stringList.get(16)) ? null :stringList.get(16)));
                     groupVos.add(groupVo);
                 }
-                List<GroupVo>  inDegrees = groupVos.stream().sorted(Comparator.comparing(GroupVo::getInDegree)).collect(Collectors.toList());
-                List<GroupVo>  outDegrees = groupVos.stream().sorted(Comparator.comparing(GroupVo::getOutDegree)).collect(Collectors.toList());
-                List<GroupVo>  degrees = groupVos.stream().sorted(Comparator.comparing(GroupVo::getDegree)).collect(Collectors.toList());
-                List<GroupVo>  betweenessCentralitys = groupVos.stream().sorted(Comparator.comparing(GroupVo::getBetweenessCentrality)).collect(Collectors.toList());
+                List<GroupVo>  inDegrees = groupVos.stream().sorted(Comparator.comparing(GroupVo::getInDegree).reversed()).collect(Collectors.toList());
+                List<GroupVo>  outDegrees = groupVos.stream().sorted(Comparator.comparing(GroupVo::getOutDegree).reversed()).collect(Collectors.toList());
+                List<GroupVo>  degrees = groupVos.stream().sorted(Comparator.comparing(GroupVo::getDegree).reversed()).collect(Collectors.toList());
+
+                List<GroupVo>  gs = groupVos.stream().sorted(Comparator.comparing(GroupVo::getG).reversed()).collect(Collectors.toList());
+                List<GroupVo>  hs = groupVos.stream().sorted(Comparator.comparing(GroupVo::getH).reversed()).collect(Collectors.toList());
+                List<GroupVo>  is = groupVos.stream().sorted(Comparator.comparing(GroupVo::getI).reversed()).collect(Collectors.toList());
+                List<GroupVo>  ks = groupVos.stream().sorted(Comparator.comparing(GroupVo::getK).reversed()).collect(Collectors.toList());
+                List<GroupVo>  betweenessCentralitys = groupVos.stream().sorted(Comparator.comparing(GroupVo::getBetweenessCentrality).reversed()).collect(Collectors.toList());
+                List<GroupVo>  os = groupVos.stream().sorted(Comparator.comparing(GroupVo::getO).reversed()).collect(Collectors.toList());
+                List<GroupVo>  qs = groupVos.stream().sorted(Comparator.comparing(GroupVo::getQ).reversed()).collect(Collectors.toList());
+
+
+
                 DegreeVo degreeVo = new DegreeVo();
                 degreeVo.setInDegrees(inDegrees);
                 degreeVo.setOutDegrees(outDegrees);
                 degreeVo.setDegrees(degrees);
+                degreeVo.setGs(gs);
+                degreeVo.setHs(hs);
+                degreeVo.setIs(is);
+                degreeVo.setKs(ks);
+                degreeVo.setOs(os);
+                degreeVo.setQs(qs);
                 degreeVo.setBetweenessCentralitys(betweenessCentralitys);
 
                 degreeVoMap.put(year+i,degreeVo);
@@ -220,6 +242,15 @@ public class TestController {
             int outDegreesCount = 0;
             int degreesCount = 0;
             int betweenessCentralitysCount = 0;
+
+
+            int gsCount = 0;
+            int hsCount = 0;
+            int isCount = 0;
+            int ksCount = 0;
+            int osCount = 0;
+            int qsCount = 0;
+
             for(Map.Entry<Integer,DegreeVo> degreeVoEntry : degreeVoMap.entrySet()){
                 List<GroupVo> inDegrees = degreeVoEntry.getValue().getInDegrees();
                 if(inDegreesCount < inDegrees.size()){
@@ -240,23 +271,52 @@ public class TestController {
                     betweenessCentralitysCount =  betweenessCentralitys.size();
                 }
 
+
+                List<GroupVo> gs = degreeVoEntry.getValue().getGs();
+                if(gsCount < gs.size()){
+                    gsCount =  gs.size();
+                }
+                List<GroupVo> hs = degreeVoEntry.getValue().getHs();
+                if(hsCount < hs.size()){
+                    hsCount =  hs.size();
+                }
+
+                List<GroupVo> is = degreeVoEntry.getValue().getIs();
+                if(isCount < is.size()){
+                    isCount =  is.size();
+                }
+
+                List<GroupVo> ks = degreeVoEntry.getValue().getKs();
+                if(ksCount < ks.size()){
+                    ksCount =  ks.size();
+                }
+
+                List<GroupVo> os = degreeVoEntry.getValue().getOs();
+                if(osCount < os.size()){
+                    osCount =  os.size();
+                }
+
+                List<GroupVo> qs = degreeVoEntry.getValue().getQs();
+                if(qsCount < qs.size()){
+                    qsCount =  qs.size();
+                }
             }
 
 
             for(int i = 0; i< inDegreesCount ;i++){
                 if(i == 0){
-                    Object[] head = new Object[21];
-                    head[0] = "入度";
+                    Object[] head = new Object[22];
+                    head[0] = "D";
                     values.add(head);
-                    Object[] objects = new Object[21];
-                    for(int j = 1 ;j<=20;j++ ){
-                        objects[j] = 2000+j;
+                    Object[] objects = new Object[22];
+                    for(int j = 1 ;j<=21;j++ ){
+                        objects[j] = 2000+j-1;
                     }
                     values.add(objects);
                 }
-                Object[] objects = new Object[21];
+                Object[] objects = new Object[22];
                 objects[0] = i+1;
-                for(int j = 1 ;j<=20;j++){
+                for(int j = 1 ;j<=21;j++){
                     for(Map.Entry<Integer,DegreeVo> degreeVoEntry : degreeVoMap.entrySet()){
                         if(degreeVoEntry.getKey() == 2000+j-1){
                             List<GroupVo> inDegrees = degreeVoEntry.getValue().getInDegrees();
@@ -271,18 +331,18 @@ public class TestController {
 
             for(int i = 0; i< outDegreesCount ;i++){
                 if(i == 0){
-                    Object[] head = new Object[21];
-                    head[0] = "出度";
+                    Object[] head = new Object[22];
+                    head[0] = "E";
                     values.add(head);
-                    Object[] objects = new Object[21];
-                    for(int j = 1 ;j<=20;j++ ){
-                        objects[j] = 2000+j;
+                    Object[] objects = new Object[22];
+                    for(int j = 1 ;j<=21;j++ ){
+                        objects[j] = 2000+j-1;
                     }
                     values.add(objects);
                 }
-                Object[] objects = new Object[21];
+                Object[] objects = new Object[22];
                 objects[0] = i+1;
-                for(int j = 1 ;j<=20;j++){
+                for(int j = 1 ;j<=21;j++){
                     for(Map.Entry<Integer,DegreeVo> degreeVoEntry : degreeVoMap.entrySet()){
                         if(degreeVoEntry.getKey() == 2000+j-1){
                             List<GroupVo> outDegrees = degreeVoEntry.getValue().getOutDegrees();
@@ -297,18 +357,18 @@ public class TestController {
 
             for(int i = 0; i< degreesCount ;i++){
                 if(i == 0){
-                    Object[] head = new Object[21];
-                    head[0] = "度";
+                    Object[] head = new Object[22];
+                    head[0] = "F";
                     values.add(head);
-                    Object[] objects = new Object[21];
-                    for(int j = 1 ;j<=20;j++ ){
-                        objects[j] = 2000+j;
+                    Object[] objects = new Object[22];
+                    for(int j = 1 ;j<=21;j++ ){
+                        objects[j] = 2000+j-1;
                     }
                     values.add(objects);
                 }
-                Object[] objects = new Object[21];
+                Object[] objects = new Object[22];
                 objects[0] = i+1;
-                for(int j = 1 ;j<=20;j++){
+                for(int j = 1 ;j<=21;j++){
                     for(Map.Entry<Integer,DegreeVo> degreeVoEntry : degreeVoMap.entrySet()){
                         if(degreeVoEntry.getKey() == 2000+j-1){
                             List<GroupVo> degrees = degreeVoEntry.getValue().getDegrees();
@@ -323,18 +383,18 @@ public class TestController {
 
             for(int i = 0; i< betweenessCentralitysCount ;i++){
                 if(i == 0){
-                    Object[] head = new Object[21];
-                    head[0] = "中介度";
+                    Object[] head = new Object[22];
+                    head[0] = "M";
                     values.add(head);
-                    Object[] objects = new Object[21];
-                    for(int j = 1 ;j<=20;j++ ){
-                        objects[j] = 2000+j;
+                    Object[] objects = new Object[22];
+                    for(int j = 1 ;j<=21;j++ ){
+                        objects[j] = 2000+j-1;
                     }
                     values.add(objects);
                 }
-                Object[] objects = new Object[21];
+                Object[] objects = new Object[22];
                 objects[0] = i+1;
-                for(int j = 1 ;j<=20;j++){
+                for(int j = 1 ;j<=21;j++){
                     for(Map.Entry<Integer,DegreeVo> degreeVoEntry : degreeVoMap.entrySet()){
                         if(degreeVoEntry.getKey() == 2000+j-1){
                             List<GroupVo> betweenessCentralitys = degreeVoEntry.getValue().getBetweenessCentralitys();
@@ -347,7 +407,161 @@ public class TestController {
                 values.add(objects);
             }
 
+            for(int i = 0; i< gsCount ;i++){
+                if(i == 0){
+                    Object[] head = new Object[22];
+                    head[0] = "G";
+                    values.add(head);
+                    Object[] objects = new Object[22];
+                    for(int j = 1 ;j<=21;j++ ){
+                        objects[j] = 2000+j-1;
+                    }
+                    values.add(objects);
+                }
+                Object[] objects = new Object[22];
+                objects[0] = i+1;
+                for(int j = 1 ;j<=21;j++){
+                    for(Map.Entry<Integer,DegreeVo> degreeVoEntry : degreeVoMap.entrySet()){
+                        if(degreeVoEntry.getKey() == 2000+j-1){
+                            List<GroupVo> gs = degreeVoEntry.getValue().getGs();
+                            if(gs.size() > i){
+                                objects[j] =  gs.get(i).getId();
+                            }
+                        }
+                    }
+                }
+                values.add(objects);
+            }
 
+            for(int i = 0; i< hsCount ;i++){
+                if(i == 0){
+                    Object[] head = new Object[22];
+                    head[0] = "H";
+                    values.add(head);
+                    Object[] objects = new Object[22];
+                    for(int j = 1 ;j<=21;j++ ){
+                        objects[j] = 2000+j-1;
+                    }
+                    values.add(objects);
+                }
+                Object[] objects = new Object[22];
+                objects[0] = i+1;
+                for(int j = 1 ;j<=21;j++){
+                    for(Map.Entry<Integer,DegreeVo> degreeVoEntry : degreeVoMap.entrySet()){
+                        if(degreeVoEntry.getKey() == 2000+j-1){
+                            List<GroupVo> hs = degreeVoEntry.getValue().getHs();
+                            if(hs.size() > i){
+                                objects[j] =  hs.get(i).getId();
+                            }
+                        }
+                    }
+                }
+                values.add(objects);
+            }
+
+            for(int i = 0; i< isCount ;i++){
+                if(i == 0){
+                    Object[] head = new Object[22];
+                    head[0] = "I";
+                    values.add(head);
+                    Object[] objects = new Object[22];
+                    for(int j = 1 ;j<=21;j++ ){
+                        objects[j] = 2000+j-1;
+                    }
+                    values.add(objects);
+                }
+                Object[] objects = new Object[22];
+                objects[0] = i+1;
+                for(int j = 1 ;j<=21;j++){
+                    for(Map.Entry<Integer,DegreeVo> degreeVoEntry : degreeVoMap.entrySet()){
+                        if(degreeVoEntry.getKey() == 2000+j-1){
+                            List<GroupVo> is = degreeVoEntry.getValue().getIs();
+                            if(is.size() > i){
+                                objects[j] =  is.get(i).getId();
+                            }
+                        }
+                    }
+                }
+                values.add(objects);
+            }
+
+            for(int i = 0; i< ksCount ;i++){
+                if(i == 0){
+                    Object[] head = new Object[22];
+                    head[0] = "K";
+                    values.add(head);
+                    Object[] objects = new Object[22];
+                    for(int j = 1 ;j<=21;j++ ){
+                        objects[j] = 2000+j-1;
+                    }
+                    values.add(objects);
+                }
+                Object[] objects = new Object[22];
+                objects[0] = i+1;
+                for(int j = 1 ;j<=21;j++){
+                    for(Map.Entry<Integer,DegreeVo> degreeVoEntry : degreeVoMap.entrySet()){
+                        if(degreeVoEntry.getKey() == 2000+j-1){
+                            List<GroupVo> ks = degreeVoEntry.getValue().getKs();
+                            if(ks.size() > i){
+                                objects[j] =  ks.get(i).getId();
+                            }
+                        }
+                    }
+                }
+                values.add(objects);
+            }
+
+            for(int i = 0; i< osCount ;i++){
+                if(i == 0){
+                    Object[] head = new Object[22];
+                    head[0] = "O";
+                    values.add(head);
+                    Object[] objects = new Object[22];
+                    for(int j = 1 ;j<=21;j++ ){
+                        objects[j] = 2000+j-1;
+                    }
+                    values.add(objects);
+                }
+                Object[] objects = new Object[22];
+                objects[0] = i+1;
+                for(int j = 1 ;j<=21;j++){
+                    for(Map.Entry<Integer,DegreeVo> degreeVoEntry : degreeVoMap.entrySet()){
+                        if(degreeVoEntry.getKey() == 2000+j-1){
+                            List<GroupVo> os = degreeVoEntry.getValue().getOs();
+                            if(os.size() > i){
+                                objects[j] =  os.get(i).getId();
+                            }
+                        }
+                    }
+                }
+                values.add(objects);
+            }
+
+            for(int i = 0; i< qsCount ;i++){
+                if(i == 0){
+                    Object[] head = new Object[22];
+                    head[0] = "Q";
+                    values.add(head);
+                    Object[] objects = new Object[22];
+                    for(int j = 1 ;j<=21;j++ ){
+                        objects[j] = 2000+j-1;
+                    }
+                    values.add(objects);
+                }
+                Object[] objects = new Object[22];
+                objects[0] = i+1;
+                for(int j = 1 ;j<=21;j++){
+                    for(Map.Entry<Integer,DegreeVo> degreeVoEntry : degreeVoMap.entrySet()){
+                        if(degreeVoEntry.getKey() == 2000+j-1){
+                            List<GroupVo> qs = degreeVoEntry.getValue().getQs();
+                            if(qs.size() > i){
+                                objects[j] =  qs.get(i).getId();
+                            }
+                        }
+                    }
+                }
+                values.add(objects);
+            }
 
             CsvImportUtil.makeTempCSVToPath(m.getKey(),title,values,"D:\\exl\\out");
             System.out.println(values.size());
@@ -381,7 +595,7 @@ public class TestController {
             @Override
             public void run() {
                 try {
-                    createManyFile(codeTestVo,11,20,"年");
+                    createManyFile(codeTestVo,11,21,"年");
                 } catch (IOException e) {
                     e.printStackTrace();
                 }finally {

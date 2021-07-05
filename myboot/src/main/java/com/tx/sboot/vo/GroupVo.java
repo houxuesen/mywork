@@ -11,7 +11,15 @@ public class GroupVo {
     private Double  inDegree;
     private Double  outDegree;
     private Double  degree;
+
+    private Double g;
+    private Double h;
+    private Double i;
+    private Double k;
     private Double  betweenessCentrality;
+
+    private Double o;
+    private Double q;
 
     public String getId() {
         return id;
@@ -51,5 +59,53 @@ public class GroupVo {
 
     public void setBetweenessCentrality(Double betweenessCentrality) {
         this.betweenessCentrality = betweenessCentrality;
+    }
+
+    public Double getG() {
+        return g;
+    }
+
+    public void setG(Double g) {
+        this.g = g;
+    }
+
+    public Double getH() {
+        return h;
+    }
+
+    public void setH(Double h) {
+        this.h = h;
+    }
+
+    public Double getI() {
+        return i;
+    }
+
+    public void setI(Double i) {
+        this.i = i;
+    }
+
+    public Double getK() {
+        return k;
+    }
+
+    public void setK(Double k) {
+        this.k = k;
+    }
+
+    public Double getO() {
+        return o;
+    }
+
+    public void setO(Double o) {
+        this.o = o;
+    }
+
+    public Double getQ() {
+        return q;
+    }
+
+    public void setQ(Double q) {
+        this.q = q;
     }
 }
