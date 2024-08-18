@@ -18,7 +18,7 @@
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
       <module name="myboot" options="-parameters" />
       <module name="mycloud" options="-parameters" />
-      <module name="mymaven" options="-parameters" />
+      <module name="mymaven" options="" />
       <module name="springboot-yml" options="-parameters" />
       <module name="tools" options="-parameters" />
     </option>
