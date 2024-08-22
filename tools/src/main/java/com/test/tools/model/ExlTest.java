@@ -44,22 +44,29 @@ public class ExlTest {
         String fileName = "/Users/lishagrace/IdeaProjects/mywork/" + "simpleWrite" + System.currentTimeMillis() + ".xlsx";
         List<Map<Integer,Object>> outList = new ArrayList<>();
         Map<Integer, Object> newTitle = new HashMap<>();
-        title.entrySet().stream().forEach(t->{
-            if(t.getKey()<=2){
-                newTitle.put(t.getKey(),t.getValue());
-            }
-        });
-        newTitle.put(Integer.parseInt("3"),"2000~2019年");
+        newTitle.put(0,"区域");
+        newTitle.put(1,"经/纬度");
+        List<String> indexList = new ArrayList<>();
+        indexList.add("1985-1994");
+        indexList.add("1995-2004");
+        indexList.add("2005-2014");
+        indexList.add("2015-2023");
+        for(int i=0;i< indexList.size();i++){
+            newTitle.put(i+2,indexList.get(i));
+        }
         // outList.add(newTitle);
         for(Map.Entry<String,List<Map<Integer, Object>> > entry : result.entrySet()){
-            outList.addAll(getListVyIndex(entry.getKey(),entry.getValue(), Integer.parseInt("103"), Integer.parseInt("122")));
+            outList.addAll(getListVyIndex(entry.getKey(),entry.getValue(), indexList));
         }
+        String minFileName = "/Users/lishagrace/IdeaProjects/mywork/" + "差额" + System.currentTimeMillis() + ".xlsx";
+        EasyExcel.write(minFileName).sheet("差额").doWrite(outList);
         Map<Object, List<Map<Integer, Object>>> outMap = outList.stream().collect(Collectors.groupingBy(r -> r.get(0),LinkedHashMap::new,Collectors.toList()));
 
         //1）生成所有的联盟
         int n = parts.size();
         long parse = getParse(n);
         List<Map<Integer, Object>> listVyIndex = new ArrayList<>();
+        listVyIndex.add(newTitle);
         //2）计算成员的边际贡献
         for (String part:parts){
             Map<Integer,Object> outResultX = new LinkedHashMap<>();
@@ -70,44 +77,48 @@ public class ExlTest {
             // 包含该大洲的数据
             List<Map.Entry<Object, List<Map<Integer, Object>>>> collect = outMap.entrySet().stream().filter(r -> r.getKey().toString().contains(part)).collect(Collectors.toList());
             List<Map.Entry<Object, List<Map<Integer, Object>>>> no_collect = outMap.entrySet().stream().filter(r -> !r.getKey().toString().contains(part)).collect(Collectors.toList());
-            // 计算差额
-            BigDecimal total = BigDecimal.ZERO;
-            BigDecimal k_payoff_y = BigDecimal.ZERO;
-            BigDecimal k_payoff_x = BigDecimal.ZERO;
-            int i = 0;
-            for(Map.Entry<Object, List<Map<Integer, Object>>> set :collect){
-                String key = set.getKey().toString();
-                int s = key.split(",").length;
-                BigDecimal k_weight = BigDecimal.valueOf(getParse(s-1)).multiply(BigDecimal.valueOf(getParse(n-s))).divide(BigDecimal.valueOf(parse),6,RoundingMode.HALF_UP);
-                total = total.add(k_weight);
-                //  计算差额
-                List<Map<Integer, Object>> value = set.getValue();
-                if(s == 1){
-                    k_payoff_y =  convertToBigDecimal(value.get(0).get(3)).multiply(k_weight).add(k_payoff_y);
-                    k_payoff_x =  convertToBigDecimal(value.get(1).get(3)).multiply(k_weight).add(k_payoff_x);
-                }else{
-                    Map.Entry<Object, List<Map<Integer, Object>>> no_k_coalition = no_collect.get(i - 1);
-                    System.out.println(value.get(0).get(0));
-                    System.out.println(no_k_coalition.getValue().get(0).get(0));
-                    for(int j=0;j<value.size();j++){
-                        if(j==0){
-                            outResultY.put(1,value.get(j).get(1));
-                            BigDecimal y1 =  convertToBigDecimal(value.get(j).get(3));
-                            BigDecimal y2 = convertToBigDecimal(no_k_coalition.getValue().get(0).get(3));
-                            k_payoff_y = y1.subtract(y2).multiply(k_weight).add(k_payoff_y);
-                        }
-                        if(j==1){
-                            outResultX.put(1,value.get(j).get(1));
-                            BigDecimal x1 =  convertToBigDecimal(value.get(j).get(3));
-                            BigDecimal x2 = convertToBigDecimal(no_k_coalition.getValue().get(j).get(3));
-                            k_payoff_x = x1.subtract(x2).multiply(k_weight).add(k_payoff_x);
+            for(int k = 0;k<indexList.size() ;k++){
+                // 计算差额
+                BigDecimal total = BigDecimal.ZERO;
+                BigDecimal k_payoff_y = BigDecimal.ZERO;
+                BigDecimal k_payoff_x = BigDecimal.ZERO;
+                int i = 0;
+                int index = 3+k;
+                for(Map.Entry<Object, List<Map<Integer, Object>>> set :collect){
+                    String key = set.getKey().toString();
+                    int s = key.split(",").length;
+                    BigDecimal k_weight = BigDecimal.valueOf(getParse(s-1)).multiply(BigDecimal.valueOf(getParse(n-s))).divide(BigDecimal.valueOf(parse),6,RoundingMode.HALF_UP);
+                    total = total.add(k_weight);
+                    //  计算差额
+                    List<Map<Integer, Object>> value = set.getValue();
+                    if(s == 1){
+                        k_payoff_y =  convertToBigDecimal(value.get(0).get(index)).multiply(k_weight).add(k_payoff_y);
+                        k_payoff_x =  convertToBigDecimal(value.get(1).get(index)).multiply(k_weight).add(k_payoff_x);
+                    }else{
+                        Map.Entry<Object, List<Map<Integer, Object>>> no_k_coalition = no_collect.get(i - 1);
+                        System.out.println(value.get(0).get(0));
+                        System.out.println(no_k_coalition.getValue().get(0).get(0));
+                        for(int j=0;j<value.size();j++){
+                            if(j==0){
+                                outResultY.put(1,value.get(j).get(1));
+                                BigDecimal y1 =  convertToBigDecimal(value.get(j).get(index));
+                                BigDecimal y2 = convertToBigDecimal(no_k_coalition.getValue().get(0).get(index));
+                                k_payoff_y = y1.subtract(y2).multiply(k_weight).add(k_payoff_y);
+                            }
+                            if(j==1){
+                                outResultX.put(1,value.get(j).get(1));
+                                BigDecimal x1 =  convertToBigDecimal(value.get(j).get(index));
+                                BigDecimal x2 = convertToBigDecimal(no_k_coalition.getValue().get(j).get(index));
+                                k_payoff_x = x1.subtract(x2).multiply(k_weight).add(k_payoff_x);
+                            }
                         }
                     }
+                    i++;
                 }
-                i++;
+                outResultX.put(2+k,k_payoff_x);
+                outResultY.put(2+k,k_payoff_y);
             }
-            outResultX.put(2,k_payoff_x);
-            outResultY.put(2,k_payoff_y);
+
 
             listVyIndex.add(outResultY);
             listVyIndex.add(outResultX);
@@ -126,28 +137,31 @@ public class ExlTest {
         return factorial;
     }
 
-    private static List<Map<Integer, Object>>  getListVyIndex(String key,List<Map<Integer, Object>> totalList,Integer startIndex,Integer endIndex){
+    private static List<Map<Integer, Object>>  getListVyIndex(String key,List<Map<Integer, Object>> totalList,List<String> indexList){
         List<Map<Integer, Object>> list = new ArrayList<>();
         for(Map<Integer, Object> map : totalList){
-            BigDecimal start = BigDecimal.ZERO;
-            BigDecimal end = BigDecimal.ZERO;
-
-            if(map.containsKey(startIndex)){
-                start = convertToBigDecimal(map.get(startIndex));
-            }
-
-            if(map.containsKey(endIndex)){
-                end  = convertToBigDecimal(map.get(endIndex));
-            }
-
             Map<Integer,Object> sysResult = new LinkedHashMap<>();
             sysResult.put(0,key);
             if(map.containsKey(Integer.parseInt("1"))){
                 sysResult.put(Integer.parseInt("1"),map.get(Integer.parseInt("1")));
             }
             sysResult.put(2,null);
-            sysResult.put(3,convertToBigDecimal(end.subtract(start)));
-            sysResult.put(4,null);
+            for(int i = 0;i<indexList.size();i++){
+                BigDecimal start = BigDecimal.ZERO;
+                BigDecimal end = BigDecimal.ZERO;
+                String[] split = indexList.get(i).split("-");
+                Integer startIndex = Integer.parseInt(split[0])-1900+3;
+                Integer endIndex = Integer.parseInt(split[1])-1900+3;
+                if(map.containsKey(startIndex)){
+                    start = convertToBigDecimal(map.get(startIndex));
+                }
+
+                if(map.containsKey(endIndex)){
+                    end  = convertToBigDecimal(map.get(endIndex));
+                }
+                sysResult.put(i+3,convertToBigDecimal(end.subtract(start)));
+            }
+
             list.add(sysResult);
 
         }
